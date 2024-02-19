@@ -11,7 +11,7 @@ defmodule TextChunkerTest do
 
     byte_size_of_chunks =
       text
-      |> RecursiveSplit.recursive_split(separators, 1000, 0)
+      |> RecursiveSplit.split(separators, 1000, 0)
       |> Enum.reduce(0, fn chunk, total -> byte_size(chunk) + total end)
 
     assert byte_size(text) == byte_size_of_chunks

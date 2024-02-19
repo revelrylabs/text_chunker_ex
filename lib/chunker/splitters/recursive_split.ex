@@ -4,7 +4,7 @@ defmodule Chunker.Splitters.RecursiveSplit do
   and overlap requirements. It effectively divides text using various delimiters,
   ensuring logical consistency across chunks by preserving context where needed.
   """
-  def recursive_split(text, separators, chunk_size, chunk_overlap) do
+  def split(text, separators, chunk_size, chunk_overlap) do
     {current_separator, remaining_separators} = get_active_separator(separators, text)
 
     {final_chunks, good_splits} =
@@ -35,7 +35,7 @@ defmodule Chunker.Splitters.RecursiveSplit do
                 chunk_overlap
               )
 
-            more_chunks = recursive_split(chunk, remaining_separators, chunk_size, chunk_overlap)
+            more_chunks = split(chunk, remaining_separators, chunk_size, chunk_overlap)
             {final_chunks ++ more_chunks, []}
         end
       end)

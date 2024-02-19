@@ -12,7 +12,7 @@ defmodule Chunker.TextChunker do
   @default_opts [
     chunk_size: 2000,
     chunk_overlap: 200,
-    strategy: &RecursiveSplit.recursive_split/4
+    strategy: &RecursiveSplit.split/4
   ]
   @doc """
   Generates a list of `%Segment{}` from the input text, tailored by a custom splitting strategy and options.
