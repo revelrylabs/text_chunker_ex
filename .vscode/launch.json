@@ -1,0 +1,24 @@
+{
+  "version": "0.2.0",
+  "inputs": [
+    // This input allows us to prompt the VSCode user for arguments when we run a debug configuration.
+    {
+        "id": "runArgs",
+        "type": "promptString",
+        "description": "Enter arguments for `mix run -e`"
+    }
+],
+  "configurations": [
+    {
+      "type": "mix_task",
+      "name": "run tests",
+      "request": "launch",
+      "task": "test",
+      "taskArgs": [
+        "--trace"
+      ],
+      "startApps": true,
+      "projectDir": "${workspaceRoot}"
+    }
+  ]
+}
