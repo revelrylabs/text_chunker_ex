@@ -1,7 +1,8 @@
 defmodule RecursiveSplitTest do
-  alias Chunker.RecursiveSplit
-
   use ExUnit.Case
+
+  alias Chunker.Separators
+  alias Chunker.Splitters.RecursiveSplit
 
   @moduletag timeout: :infinity
 
@@ -41,8 +42,7 @@ defmodule RecursiveSplitTest do
       chunk_size = 10
       chunk_overlap = 2
 
-      text =
-        "This is a text splitter.\nIt splits text.\n\nThis is a completely separate paragraph of context."
+      text = "This is a text splitter.\nIt splits text.\n\nThis is a completely separate paragraph of context."
 
       separators = Separators.get_separators(:plaintext)
       result = RecursiveSplit.recursive_split(text, separators, chunk_size, chunk_overlap)
@@ -150,7 +150,7 @@ defmodule RecursiveSplitTest do
     end
   end
 
-    @doc """
+  @doc """
   move this
   """
   def first_split_hamlet do

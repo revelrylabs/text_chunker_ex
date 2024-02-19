@@ -1,4 +1,4 @@
-defmodule Chunker.RecursiveSplit do
+defmodule Chunker.Splitters.RecursiveSplit do
   @moduledoc """
   Handles recursion-based text splitting into chunks, adhering to configured size
   and overlap requirements. It effectively divides text using various delimiters,
@@ -135,7 +135,8 @@ defmodule Chunker.RecursiveSplit do
   # a) the current total length of the splits exceeds the chunk overlap - this is where we create the chunk overlap
   # b) when the sum of the combined splits's total length and the length of the current split exceeds the chunk size.
   defp reduce_chunk_size(splits_total_length, chunk_overlap, chunk_size, split_length, current_splits)
-       when splits_total_length > chunk_overlap or (splits_total_length + split_length > chunk_size and splits_total_length > 0) do
+       when splits_total_length > chunk_overlap or
+              (splits_total_length + split_length > chunk_size and splits_total_length > 0) do
     new_total = splits_total_length - String.length(Enum.at(current_splits, 0))
     [_head | rest] = current_splits
     reduce_chunk_size(new_total, chunk_overlap, chunk_size, split_length, rest)
