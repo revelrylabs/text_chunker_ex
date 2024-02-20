@@ -1,5 +1,7 @@
 defmodule Chunker.Segment do
-  @moduledoc false
+  @moduledoc """
+  Defines the `Segment` schema, representing a contiguous block of text along with its byte range indicators.
+  """
   use Ecto.Schema
 
   import Ecto.Changeset
