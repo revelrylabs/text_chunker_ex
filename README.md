@@ -62,7 +62,7 @@ text = """
 Let's split your text up properly!
 """
 opts = [chunk_size: 10, chunk_overlap: 5, format: :markdown]
-chunks = RecursiveSplit.split(text)
+chunks = RecursiveSplit.split(text, opts)
 ```
 
 ### Splitting Strategies
@@ -80,7 +80,8 @@ alias Chunker.TextChunker
 
 text = "This is a sample text. It will be split into properly-sized chunks using the Chunker library."
 opts = [chunk_size: 50, chunk_overlap: 5, format: :plaintext, strategy: &RecursiveSplit.split/2,]
-iex> TextChunker.split(text)
+
+iex> TextChunker.split(text, opts)
 
 [
   %Chunker.Segment{
