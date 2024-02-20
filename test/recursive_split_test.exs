@@ -8,14 +8,16 @@ defmodule RecursiveSplitTest do
 
   describe "plaintext splitter" do
     test "splits multiple sentences correctly" do
-      chunk_size = 50
-      chunk_overlap = 10
+      opts = [
+        chunk_size: 50,
+        chunk_overlap: 10,
+        format: :plaintext
+      ]
 
       text =
         "This is quite a short sentence. But what a headache does the darn thing create! Especially when splitting is involved. Do not look for meaning."
 
-      separators = Separators.get_separators(:plaintext)
-      result = RecursiveSplit.split(text, separators, chunk_size, chunk_overlap)
+      result = RecursiveSplit.split(text, opts)
 
       expected_result = [
         "This is quite a short sentence. But what a",
@@ -28,24 +30,29 @@ defmodule RecursiveSplitTest do
     end
 
     test "splits a piece of short text correctly" do
-      chunk_size = 10
-      chunk_overlap = 2
+      opts = [
+        chunk_size: 10,
+        chunk_overlap: 2,
+        format: :plaintext
+      ]
+
       text = "Hello there!\n General sdKenobi..."
-      separators = Separators.get_separators(:plaintext)
-      result = RecursiveSplit.split(text, separators, chunk_size, chunk_overlap)
+      result = RecursiveSplit.split(text, opts)
       expected_result = ["Hello", " there!", "\n General", " sdKenobi.", "i..."]
 
       assert result == expected_result
     end
 
     test "splits a longer text correctly" do
-      chunk_size = 10
-      chunk_overlap = 2
+      opts = [
+        chunk_size: 10,
+        chunk_overlap: 2,
+        format: :plaintext
+      ]
 
       text = "This is a text splitter.\nIt splits text.\n\nThis is a completely separate paragraph of context."
 
-      separators = Separators.get_separators(:plaintext)
-      result = RecursiveSplit.split(text, separators, chunk_size, chunk_overlap)
+      result = RecursiveSplit.split(text, opts)
 
       expected_result = [
         "This is a",
@@ -67,13 +74,17 @@ defmodule RecursiveSplitTest do
     end
 
     test "copies the test from langchain" do
-      chunk_size = 10
-      chunk_overlap = 1
+      opts = [
+        chunk_size: 10,
+        chunk_overlap: 1,
+        format: :plaintext
+      ]
+
       text = "Hi.\n\nI'm Harrison.\n\nHow? Are? You?\nOkay then f f f f.
       This is a weird text to write, but gotta test the splittingggg some how.\n\n
       Bye!\n\n-H."
-      separators = Separators.get_separators(:plaintext)
-      result = RecursiveSplit.split(text, separators, chunk_size, chunk_overlap)
+
+      result = RecursiveSplit.split(text, opts)
 
       expected_result = [
         "Hi.",
@@ -106,14 +117,18 @@ defmodule RecursiveSplitTest do
     end
 
     test "splits a huge file correctly" do
-      chunk_size = 1000
-      chunk_overlap = 200
+      opts = [
+        chunk_size: 1000,
+        chunk_overlap: 200,
+        format: :plaintext
+      ]
+
       {:ok, text} = File.read("test/support/fixtures/document_fixtures/hamlet.txt")
       separators = Separators.get_separators(:plaintext)
 
       result =
         text
-        |> RecursiveSplit.split(separators, chunk_size, chunk_overlap)
+        |> RecursiveSplit.split(opts)
         |> Enum.take(2)
 
       expected_result = first_split_hamlet()
@@ -124,13 +139,15 @@ defmodule RecursiveSplitTest do
 
   describe "markdown splitter" do
     test "splits a simple markdown file" do
-      chunk_size = 100
-      chunk_overlap = 20
+      opts = [
+        chunk_size: 100,
+        chunk_overlap: 20,
+        format: :markdown
+      ]
+
       {:ok, text} = File.read("test/support/fixtures/document_fixtures/test_file.md")
 
-      separators = Separators.get_separators(:markdown)
-
-      result = RecursiveSplit.split(text, separators, chunk_size, chunk_overlap)
+      result = RecursiveSplit.split(text, opts)
 
       expected_result = [
         "# Foobar\n\nFoobar is a Python library for dealing with word pluralization.\n",

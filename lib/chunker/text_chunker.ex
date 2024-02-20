@@ -12,24 +12,22 @@ defmodule Chunker.TextChunker do
   @default_opts [
     chunk_size: 2000,
     chunk_overlap: 200,
-    strategy: &RecursiveSplit.split/4
+    strategy: &RecursiveSplit.split/2,
+    format: :plaintext
   ]
+
   @doc """
   Generates a list of `%Segment{}` from the input text, tailored by a custom splitting strategy and options.
   """
-  @spec create_segments(binary(), list(), list()) :: [Segment.t()]
-  def create_segments(text, separators, opts \\ []) do
+  @spec split(binary(), keyword()) :: [Segment.t()]
+  def split(text, opts \\ []) do
     opts = Keyword.merge(@default_opts, opts)
-    chunk_size = opts[:chunk_size]
-    chunk_overlap = opts[:chunk_overlap]
-    strategy = opts[:strategy]
-
-    split_text = strategy.(text, separators, chunk_size, chunk_overlap)
+    split_text = opts[:strategy].(text, opts)
 
     segments =
       Enum.reduce(split_text, [], fn chunk, segments ->
-        if String.length(chunk) > chunk_size do
-          Logger.warning("Chunk size of #{String.length(chunk)} is greater than #{chunk_size}. Skipping...")
+        if String.length(chunk) > opts[:chunk_size] do
+          Logger.warning("Chunk size of #{String.length(chunk)} is greater than #{opts[:chunk_size]}. Skipping...")
 
           segments
         else

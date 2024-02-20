@@ -4,7 +4,25 @@ defmodule Chunker.Splitters.RecursiveSplit do
   and overlap requirements. It effectively divides text using various delimiters,
   ensuring logical consistency across chunks by preserving context where needed.
   """
-  def split(text, separators, chunk_size, chunk_overlap) do
+
+  @behaviour Chunker.SplitterBehaviour
+
+  alias Chunker.Separators
+
+  @impl true
+  @spec split(binary(), keyword()) :: [binary()]
+  @doc """
+  Splits the given text into chunks based on specified options, using a recursive strategy
+  """
+  def split(text, opts) do
+    separators = Separators.get_separators(opts[:format])
+    chunk_size = opts[:chunk_size]
+    chunk_overlap = opts[:chunk_overlap]
+
+    perform_split(text, separators, chunk_size, chunk_overlap)
+  end
+
+  defp perform_split(text, separators, chunk_size, chunk_overlap) do
     {current_separator, remaining_separators} = get_active_separator(separators, text)
 
     {final_chunks, good_splits} =
@@ -35,7 +53,7 @@ defmodule Chunker.Splitters.RecursiveSplit do
                 chunk_overlap
               )
 
-            more_chunks = split(chunk, remaining_separators, chunk_size, chunk_overlap)
+            more_chunks = perform_split(chunk, remaining_separators, chunk_size, chunk_overlap)
             {final_chunks ++ more_chunks, []}
         end
       end)
@@ -59,7 +77,7 @@ defmodule Chunker.Splitters.RecursiveSplit do
   end
 
   # Fallback to an empty string as separator. This means it's one gigantic line of nothingness
-  # with no separators. It will get ignored inside create_splitument_segments. The separator we
+  # with no separators. It will get ignored inside TextChunker.split/2. The separator we
   # pass back is meaningless (unless it's "" in which case we will get segments
   # but it might be very slow.)
   defp get_active_separator([], _text) do
