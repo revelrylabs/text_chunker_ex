@@ -81,7 +81,6 @@ defmodule RecursiveSplitTest do
         chunk_overlap: 1,
         format: :plaintext,
         raw?: true
-
       ]
 
       text = "Hi.\n\nI'm Harrison.\n\nHow? Are? You?\nOkay then f f f f.

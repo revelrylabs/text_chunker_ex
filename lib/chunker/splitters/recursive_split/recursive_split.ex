@@ -7,8 +7,8 @@ defmodule Chunker.Splitters.RecursiveSplit do
 
   @behaviour Chunker.SplitterBehaviour
 
-  alias Chunker.Splitters.RecursiveSplit.Separators
   alias Chunker.Chunk
+  alias Chunker.Splitters.RecursiveSplit.Separators
 
   require Logger
 
@@ -27,34 +27,35 @@ defmodule Chunker.Splitters.RecursiveSplit do
   end
 
   def produce_metadata(text, split_text, opts) do
-    chunks = Enum.reduce(split_text, [], fn chunk, chunks ->
-      if String.length(chunk) > opts[:chunk_size] do
-        Logger.warning("Chunk size of #{String.length(chunk)} is greater than #{opts[:chunk_size]}. Skipping...")
+    chunks =
+      Enum.reduce(split_text, [], fn chunk, chunks ->
+        if String.length(chunk) > opts[:chunk_size] do
+          Logger.warning("Chunk size of #{String.length(chunk)} is greater than #{opts[:chunk_size]}. Skipping...")
 
-        chunks
-      else
-        chunk_byte_from = get_chunk_byte_start(text, chunk)
-        chunk_byte_to = chunk_byte_from + byte_size(chunk)
+          chunks
+        else
+          chunk_byte_from = get_chunk_byte_start(text, chunk)
+          chunk_byte_to = chunk_byte_from + byte_size(chunk)
 
-        chunk = %Chunk{
-          start_byte: chunk_byte_from,
-          end_byte: chunk_byte_to,
-          text: chunk
-        }
+          chunk = %Chunk{
+            start_byte: chunk_byte_from,
+            end_byte: chunk_byte_to,
+            text: chunk
+          }
 
-        chunks ++ [chunk]
-      end
-    end)
+          chunks ++ [chunk]
+        end
+      end)
 
     if chunks != [],
-    do: chunks,
-    else: [
-      %Chunk{
-        start_byte: 0,
-        end_byte: 1,
-        text: "incompatible_config_or_text_no_chunks_saved"
-      }
-    ]
+      do: chunks,
+      else: [
+        %Chunk{
+          start_byte: 0,
+          end_byte: 1,
+          text: "incompatible_config_or_text_no_chunks_saved"
+        }
+      ]
   end
 
   defp perform_split(text, separators, chunk_size, chunk_overlap) do
