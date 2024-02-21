@@ -1,7 +1,6 @@
 defmodule RecursiveSplitTest do
   use ExUnit.Case
 
-  alias Chunker.Separators
   alias Chunker.Splitters.RecursiveSplit
 
   @moduletag timeout: :infinity
@@ -11,7 +10,8 @@ defmodule RecursiveSplitTest do
       opts = [
         chunk_size: 50,
         chunk_overlap: 10,
-        format: :plaintext
+        format: :plaintext,
+        raw?: true
       ]
 
       text =
@@ -33,7 +33,8 @@ defmodule RecursiveSplitTest do
       opts = [
         chunk_size: 10,
         chunk_overlap: 2,
-        format: :plaintext
+        format: :plaintext,
+        raw?: true
       ]
 
       text = "Hello there!\n General sdKenobi..."
@@ -47,7 +48,8 @@ defmodule RecursiveSplitTest do
       opts = [
         chunk_size: 10,
         chunk_overlap: 2,
-        format: :plaintext
+        format: :plaintext,
+        raw?: true
       ]
 
       text = "This is a text splitter.\nIt splits text.\n\nThis is a completely separate paragraph of context."
@@ -77,7 +79,9 @@ defmodule RecursiveSplitTest do
       opts = [
         chunk_size: 10,
         chunk_overlap: 1,
-        format: :plaintext
+        format: :plaintext,
+        raw?: true
+
       ]
 
       text = "Hi.\n\nI'm Harrison.\n\nHow? Are? You?\nOkay then f f f f.
@@ -120,7 +124,8 @@ defmodule RecursiveSplitTest do
       opts = [
         chunk_size: 1000,
         chunk_overlap: 200,
-        format: :plaintext
+        format: :plaintext,
+        raw?: true
       ]
 
       {:ok, text} = File.read("test/support/fixtures/document_fixtures/hamlet.txt")
@@ -141,7 +146,8 @@ defmodule RecursiveSplitTest do
       opts = [
         chunk_size: 100,
         chunk_overlap: 20,
-        format: :markdown
+        format: :markdown,
+        raw?: true
       ]
 
       {:ok, text} = File.read("test/support/fixtures/document_fixtures/test_file.md")

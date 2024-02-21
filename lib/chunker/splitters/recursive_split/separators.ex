@@ -1,7 +1,6 @@
-defmodule Chunker.Separators do
+defmodule Chunker.Splitters.RecursiveSplit.Separators do
   @moduledoc """
-  A module to store the separators that we use chunk up the text
-  it.
+  A module to store the separators that we use chunk up the text using recursive split.
 
   The order of these separators is important; the text chunking works by recursively
   splitting these separators, going from left to right eg [separator | rest].
