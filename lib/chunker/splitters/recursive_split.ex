@@ -78,7 +78,7 @@ defmodule Chunker.Splitters.RecursiveSplit do
 
   # Fallback to an empty string as separator. This means it's one gigantic line of nothingness
   # with no separators. It will get ignored inside TextChunker.split/2. The separator we
-  # pass back is meaningless (unless it's "" in which case we will get segments
+  # pass back is meaningless (unless it's "" in which case we will get chunks
   # but it might be very slow.)
   defp get_active_separator([], _text) do
     {" ", []}

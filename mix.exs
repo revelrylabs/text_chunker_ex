@@ -5,9 +5,17 @@ defmodule TextChunker.MixProject do
     [
       app: :text_chunker,
       version: "0.1.0",
-      elixir: "~> 1.14",
+      elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      # Docs
+      name: "TextChunker",
+      source_url: "https://github.com/revelrylabs/text_chunker_ex",
+      homepage_url: "https://github.com/revelrylabs",
+      docs: [
+        main: "TextChunker", # The main page in the docs
+        extras: ["README.md"]
+      ]
     ]
   end
 
@@ -22,9 +30,8 @@ defmodule TextChunker.MixProject do
   defp deps do
     [
       {:ecto_sql, "~> 3.10"},
-      {:styler, "~> 0.7", only: [:dev, :test], runtime: false}
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+      {:styler, "~> 0.7", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.31", only: :dev, runtime: false},
     ]
   end
 end

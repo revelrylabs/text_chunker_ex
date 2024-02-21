@@ -40,10 +40,10 @@ chunks = TextChunker.split(text)
 
 This will split your text using the default parameters - a chunk size of `1000`, chunk overlap of `200`, format of :`plaintext` and using the `RecursiveSplit` strategy.
 
-The split method returns `Segments` of your text. These chunks include the start and end bytes of each chunk.
+The split method returns `Chunks` of your text. These chunks include the start and end bytes of each chunk.
 
 ```elixir
-%Chunker.Segment{
+%Chunker.Chunk{
     id: nil,
     start_byte: 0,
     end_byte: 44,
@@ -84,19 +84,19 @@ opts = [chunk_size: 50, chunk_overlap: 5, format: :plaintext, strategy: &Recursi
 iex> TextChunker.split(text, opts)
 
 [
-  %Chunker.Segment{
+  %Chunker.Chunk{
     id: nil,
     start_byte: 0,
     end_byte: 44,
     text: "This is a sample text. It will be split into",
   },
-  %Chunker.Segment{
+  %Chunker.Chunk{
     id: nil,
     start_byte: 39,
     end_byte: 84,
     text: " into properly-sized chunks using the Chunker",
   },
-  %Chunker.Segment{
+  %Chunker.Chunk{
     id: nil,
     start_byte: 84,
     end_byte: 93,

@@ -1,10 +1,10 @@
 defmodule Chunker.TextChunker do
   @moduledoc """
-  Splits text into segments using a recursive splitting method, adhering to defined
-  size limits and context overlap. Tracks segment byte ranges and handles oversized
-  chunks with warnings. Supports fallback for non-segmentable text.
+  Splits text into chunks using a recursive splitting method, adhering to defined
+  size limits and context overlap. Tracks chunk byte ranges and handles oversized
+  chunks with warnings. Supports fallback for non-chunkable text.
   """
-  alias Chunker.Segment
+  alias Chunker.Chunk
   alias Chunker.Splitters.RecursiveSplit
 
   require Logger
@@ -17,40 +17,40 @@ defmodule Chunker.TextChunker do
   ]
 
   @doc """
-  Generates a list of `%Segment{}` from the input text, tailored by a custom splitting strategy and options.
+  Generates a list of `%Chunk{}` from the input text, tailored by a custom splitting strategy and options.
   """
-  @spec split(binary(), keyword()) :: [Segment.t()]
+  @spec split(binary(), keyword()) :: [Chunk.t()]
   def split(text, opts \\ []) do
     opts = Keyword.merge(@default_opts, opts)
     split_text = opts[:strategy].(text, opts)
 
-    segments =
-      Enum.reduce(split_text, [], fn chunk, segments ->
+    chunks =
+      Enum.reduce(split_text, [], fn chunk, chunks ->
         if String.length(chunk) > opts[:chunk_size] do
           Logger.warning("Chunk size of #{String.length(chunk)} is greater than #{opts[:chunk_size]}. Skipping...")
 
-          segments
+          chunks
         else
           chunk_byte_from = get_chunk_byte_start(text, chunk)
           chunk_byte_to = chunk_byte_from + byte_size(chunk)
 
-          segment = %Segment{
+          chunk = %Chunk{
             start_byte: chunk_byte_from,
             end_byte: chunk_byte_to,
             text: chunk
           }
 
-          segments ++ [segment]
+          chunks ++ [chunk]
         end
       end)
 
-    if segments != [],
-      do: segments,
+    if chunks != [],
+      do: chunks,
       else: [
-        %Segment{
+        %Chunk{
           start_byte: 0,
           end_byte: 1,
-          text: "incompatible_file_no_segments_saved"
+          text: "incompatible_file_no_chunks_saved"
         }
       ]
   end
