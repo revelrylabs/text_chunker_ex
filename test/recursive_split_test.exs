@@ -1,8 +1,8 @@
-defmodule RecursiveSplitTest do
+defmodule TextChunkerTest do
   use ExUnit.Case
 
-  alias Chunker.Splitters.RecursiveSplit
   alias Chunker.TestHelpers
+  alias Chunker.TextChunker
 
   @moduletag timeout: :infinity
 
@@ -19,7 +19,7 @@ defmodule RecursiveSplitTest do
 
       result =
         text
-        |> RecursiveSplit.split(opts)
+        |> TextChunker.split(opts)
         |> TestHelpers.extract_text_from_chunks()
 
       expected_result = [
@@ -40,7 +40,7 @@ defmodule RecursiveSplitTest do
       ]
 
       text = "Hello there!\n General sdKenobi..."
-      result = text |> RecursiveSplit.split(opts) |> TestHelpers.extract_text_from_chunks()
+      result = text |> TextChunker.split(opts) |> TestHelpers.extract_text_from_chunks()
       expected_result = ["Hello", " there!", "\n General", " sdKenobi.", "i..."]
 
       assert result == expected_result
@@ -55,7 +55,7 @@ defmodule RecursiveSplitTest do
 
       text = "This is a text splitter.\nIt splits text.\n\nThis is a completely separate paragraph of context."
 
-      result = text |> RecursiveSplit.split(opts) |> TestHelpers.extract_text_from_chunks()
+      result = text |> TextChunker.split(opts) |> TestHelpers.extract_text_from_chunks()
 
       expected_result = [
         "This is a",
@@ -92,7 +92,7 @@ defmodule RecursiveSplitTest do
       This is a weird text to write, but gotta test the splittingggg some how.\n\n
       Bye!\n\n-H."
 
-      result = text |> RecursiveSplit.split(opts) |> TestHelpers.extract_text_from_chunks()
+      result = text |> TextChunker.split(opts) |> TestHelpers.extract_text_from_chunks()
 
       # double check licensing
       expected_result = [
@@ -136,13 +136,58 @@ defmodule RecursiveSplitTest do
 
       result =
         text
-        |> RecursiveSplit.split(opts)
+        |> TextChunker.split(opts)
         |> TestHelpers.extract_text_from_chunks()
         |> Enum.take(2)
 
       expected_result = TestHelpers.first_split_hamlet()
 
       assert result == expected_result
+    end
+
+    test "works for emojis" do
+      opts = [
+        chunk_size: 10,
+        chunk_overlap: 2,
+        format: :plaintext
+      ]
+
+      text = "💻💊🤔🐇🕳️🕶🥋💥🤖🐙🤯❓️"
+      result = text |> TextChunker.split(opts) |> TestHelpers.extract_text_from_chunks()
+
+      expected_result =
+        ["💻💊🤔🐇🕳️🕶🥋💥🤖", "💥🤖🐙🤯❓️"]
+
+      assert result == expected_result
+    end
+
+    test "splits text into chunks which have the same number of bytes as the original file" do
+      {:ok, text} = File.read("test/support/fixtures/document_fixtures/hamlet.txt")
+
+      opts = [
+        chunk_size: 1000,
+        chunk_overlap: 0,
+        format: :plaintext
+      ]
+
+      byte_size_of_chunks =
+        text
+        |> TextChunker.split(opts)
+        |> TestHelpers.extract_text_from_chunks()
+        |> Enum.reduce(0, fn chunk, total -> byte_size(chunk) + total end)
+
+      assert byte_size(text) == byte_size_of_chunks
+    end
+
+    test "splits text into chunks with lengths that match the original file" do
+      {:ok, text} = File.read("test/support/fixtures/document_fixtures/hamlet.txt")
+
+      [%{end_byte: last_byte_length} | _rest] =
+        text
+        |> TextChunker.split()
+        |> Enum.reverse()
+
+      assert byte_size(text) == last_byte_length
     end
   end
 
@@ -156,7 +201,7 @@ defmodule RecursiveSplitTest do
 
       {:ok, text} = File.read("test/support/fixtures/document_fixtures/test_file.md")
 
-      result = text |> RecursiveSplit.split(opts) |> TestHelpers.extract_text_from_chunks()
+      result = text |> TextChunker.split(opts) |> TestHelpers.extract_text_from_chunks()
 
       expected_result = [
         "# Foobar\n\nFoobar is a Python library for dealing with word pluralization.\n",
@@ -174,20 +219,5 @@ defmodule RecursiveSplitTest do
 
       assert result == expected_result
     end
-  end
-
-  test "works for emojis" do
-    opts = [
-      chunk_size: 10,
-      chunk_overlap: 2,
-      format: :plaintext
-    ]
-
-    text = "💻💊🤔🐇🕳️🕶🥋💥🤖🐙🤯❓️"
-    result = text |> RecursiveSplit.split(opts) |> TestHelpers.extract_text_from_chunks()
-    expected_result =
-      ["💻💊🤔🐇🕳️🕶🥋💥🤖", "💥🤖🐙🤯❓️"]
-
-    assert result == expected_result
   end
 end

@@ -120,7 +120,7 @@ We welcome contributions to Chunker! Here's how you can help:
 
 ## Acknowledgments
 
-Special thanks to the creators of langchain for their initial approach to recursive text splitting, which inspired this library.
+Special thanks to the creators of langchain for their initial approach to recursive text splitting, which inspired this library. See the [NOTICE](NOTICE) file for details.
 
 ## License
 
