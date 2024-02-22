@@ -2,6 +2,7 @@ defmodule TextChunkerTest do
   use ExUnit.Case
 
   alias Chunker.Splitters.RecursiveSplit
+  alias Chunker.TestHelpers
   alias Chunker.TextChunker
 
   test "splits text into chunks which have the same number of bytes as the original file" do
@@ -10,13 +11,13 @@ defmodule TextChunkerTest do
     opts = [
       chunk_size: 1000,
       chunk_overlap: 0,
-      format: :plaintext,
-      raw?: true
+      format: :plaintext
     ]
 
     byte_size_of_chunks =
       text
       |> RecursiveSplit.split(opts)
+      |> TestHelpers.extract_text_from_chunks()
       |> Enum.reduce(0, fn chunk, total -> byte_size(chunk) + total end)
 
     assert byte_size(text) == byte_size_of_chunks
@@ -30,8 +31,6 @@ defmodule TextChunkerTest do
       |> TextChunker.split()
       |> Enum.reverse()
 
-    IO.inspect(last_byte_length)
-    IO.inspect(byte_size(text))
-    # assert byte_size(text) == last_byte_length
+    assert byte_size(text) == last_byte_length
   end
 end

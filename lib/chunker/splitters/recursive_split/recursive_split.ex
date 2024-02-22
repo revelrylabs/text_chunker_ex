@@ -3,6 +3,8 @@ defmodule Chunker.Splitters.RecursiveSplit do
   Handles recursion-based text splitting into chunks, adhering to configured size
   and overlap requirements. It effectively divides text using various delimiters,
   ensuring logical consistency across chunks by preserving context where needed.
+
+  more here, strategies , limitations
   """
 
   @behaviour Chunker.SplitterBehaviour
@@ -23,7 +25,7 @@ defmodule Chunker.Splitters.RecursiveSplit do
     chunk_overlap = opts[:chunk_overlap]
     split_text = perform_split(text, separators, chunk_size, chunk_overlap)
 
-    if opts[:raw?], do: split_text, else: produce_metadata(text, split_text, opts)
+    produce_metadata(text, split_text, opts)
   end
 
   def produce_metadata(text, split_text, opts) do

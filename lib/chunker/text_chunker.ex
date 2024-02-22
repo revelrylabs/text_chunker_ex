@@ -10,12 +10,30 @@ defmodule Chunker.TextChunker do
     chunk_size: 2000,
     chunk_overlap: 200,
     strategy: &RecursiveSplit.split/2,
-    format: :plaintext,
-    raw?: false
+    format: :plaintext
   ]
 
   @doc """
-  Generates a list of `%Chunk{}` from the input text, tailored by a custom splitting strategy and options.
+  Splits the provided text into a list of `%Chunk{}` structs.
+
+  ## Options
+
+  * `:chunk_size` (integer, default: 2000) - Maximum size in code point length for each chunk.
+  * `:chunk_overlap` (integer, default: 200) - Number of overlapping code points between consecutive chunks to preserve context.
+  * `:strategy` (function, default: `&RecursiveSplit.split/2`) - A function taking two arguments (text and options) and returning a list of `%Chunk{}` structs. Currently only `&RecursiveSplit.split/2` is fully supported.
+  * `:format` (atom, default: `:plaintext`) - The format of the input text. Used to determine where to split the text in some strategies.
+
+  ## Examples
+
+  ```elixir
+  iex> long_text = "This is a very long text that needs to be split into smaller pieces for easier handling."
+  iex> Chunker.TextChunker.split(long_text)
+  # => [%Chunk{}, %Chunk{}, ...]
+  ```
+
+  iex> Chunker.TextChunker.split(long_text, chunk_size: 10, chunk_overlap: 3)
+  # => Generates many smaller chunks with significant overlap
+
   """
   @spec split(binary(), keyword()) :: [Chunk.t()]
   def split(text, opts \\ []) do

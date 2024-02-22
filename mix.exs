@@ -54,7 +54,8 @@ defmodule TextChunker.MixProject do
       extras:
         [
           "README.md",
-          "LICENSE"
+          "LICENSE",
+          "NOTICE"
         ]
     ]
   end
