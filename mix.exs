@@ -1,21 +1,27 @@
 defmodule TextChunker.MixProject do
   use Mix.Project
 
+  @source_url "https://github.com/revelrylabs/text_chunker_ex"
+  @version "0.1.0"
+
   def project do
     [
       app: :text_chunker,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.15",
-      start_permanent: Mix.env() == :prod,
       deps: deps(),
+      start_permanent: Mix.env() == :prod,
+
+      source_url: @source_url,
+      homepage_url: "https://github.com/revelrylabs",
+
+      # Hex
+      description: "An Elixir library for semantic text chunking.",
+      package: package(),
+
       # Docs
       name: "TextChunker",
-      source_url: "https://github.com/revelrylabs/text_chunker_ex",
-      homepage_url: "https://github.com/revelrylabs",
-      docs: [
-        main: "TextChunker", # The main page in the docs
-        extras: ["README.md"]
-      ]
+      docs: docs()
     ]
   end
 
@@ -32,6 +38,24 @@ defmodule TextChunker.MixProject do
       {:ecto_sql, "~> 3.10"},
       {:styler, "~> 0.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
+    ]
+  end
+
+  defp package do
+    [
+      licenses: ["MIT"],
+      links: %{"GitHub" => @source_url},
+    ]
+  end
+
+  defp docs() do
+    [
+      main: "readme",
+      extras:
+        [
+          "README.md",
+          "LICENSE"
+        ]
     ]
   end
 end
