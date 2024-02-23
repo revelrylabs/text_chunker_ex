@@ -1,12 +1,21 @@
-# Chunker
+# Chunker: Flexible Text Chunking for Elixir
 
-Chunker is an Elixir library for text segmentation.
+Chunker is an Elixir library designed to segment text effectively, prioritizing context preservation and adaptability. It's ideal for analytical, NLP, and other applications where understanding the relationship between text segments is crucial.
 
-It efficiently handles complex text, ideal for analytical and NLP applications requiring context retention. Future updates will introduce additional text splitting techniques to cater to diverse processing needs.
+## Key Features
+
+- Semantic Splitting: Prioritizes splitting text into meaningful blocks based on separators relevant to the specified format (e.g., headings, paragraphs in Markdown).
+- Configurable Chunking: Fine-tune the splitting process with options for:
+ - `chunk_size` (approximate target chunk size, a maximum)
+ - `chunk_overlap` (contextual overlap between chunks)
+ - `format` (informs separator selection)
+- Metadata Tracking: Automatically generates Chunk structs containing byte range information for accurately reassembling the original text if needed.
+- Extensibility: Designed to accommodate additional splitting strategies in the future.
+
 
 ## Installation
 
-Add Chunker to your list of dependencies in `mix.exs`:
+Add Chunker to your mix.exs:
 
 ```elixir
 def deps do
@@ -16,7 +25,7 @@ def deps do
 end
 ```
 
-Then, fetch your dependencies with:
+Fetch dependencies:
 
 ```
 mix deps.get
@@ -44,7 +53,6 @@ The split method returns `Chunks` of your text. These chunks include the start a
 
 ```elixir
 %Chunker.Chunk{
-    id: nil,
     start_byte: 0,
     end_byte: 44,
     text: "This is a sample text. It will be split into",
@@ -85,27 +93,22 @@ iex> TextChunker.split(text, opts)
 
 [
   %Chunker.Chunk{
-    id: nil,
     start_byte: 0,
     end_byte: 44,
     text: "This is a sample text. It will be split into",
   },
   %Chunker.Chunk{
-    id: nil,
     start_byte: 39,
     end_byte: 84,
     text: " into properly-sized chunks using the Chunker",
   },
   %Chunker.Chunk{
-    id: nil,
     start_byte: 84,
     end_byte: 93,
     text: " library.",
   }
 ]
 ```
-
-Though the library currently supports only the recursive splitting method, we are actively working to include more sophisticated text splitting strategies in the future.
 
 ## Contributing
 
