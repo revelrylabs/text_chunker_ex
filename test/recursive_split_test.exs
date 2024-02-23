@@ -161,16 +161,16 @@ defmodule TextChunkerTest do
       assert result == expected_result
     end
 
-    test "splits up composite emojis" do
+    test "works for composite emojis" do
       opts = [
-        chunk_size: 10,
+        chunk_size: 5,
         chunk_overlap: 2
       ]
 
       text = "👨‍👩‍👧‍👦👍🏿"
       result = text |> TextChunker.split(opts) |> TestHelpers.extract_text_from_chunks()
-
       expected_result = ["👨‍👩‍👧", "‍👧‍👦👍", "👦👍🏿"]
+
       assert result == expected_result
     end
 
