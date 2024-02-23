@@ -1,8 +1,12 @@
 defmodule Chunker.TextChunker do
   @moduledoc """
-  Splits text into chunks using a recursive splitting method, adhering to defined
-  size limits and context overlap. Tracks chunk byte ranges and handles oversized
-  chunks with warnings. Supports fallback for non-chunkable text.
+  Provides a high-level interface for text chunking, employing a configurable splitting strategy (defaults to recursive splitting).  Manages options and coordinates the process, tracking chunk metadata.
+
+  **Key Features**
+
+  * **Customizable Splitting:**  Allows the splitting strategy to be customized via the `:strategy` option.
+  * **Size and Overlap Control:**  Provides options for `:chunk_size` and `:chunk_overlap`.
+  * **Metadata Tracking:**  Generates `Chunk` structs containing byte range information.
   """
   alias Chunker.Splitters.RecursiveSplit
 

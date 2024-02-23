@@ -1,10 +1,27 @@
 defmodule Chunker.Splitters.RecursiveSplit do
   @moduledoc """
-  Handles recursion-based text splitting into chunks, adhering to configured size
-  and overlap requirements. It effectively divides text using various delimiters,
-  ensuring logical consistency across chunks by preserving context where needed.
+  Handles recursive text splitting, aiming to adhere to configured size and overlap requirements.
+  Employs a flexible separator-based approach to break down text into manageable chunks, while generating metadata for each produced chunk.
 
-  more here, strategies , limitations
+  **Key Features:**
+
+  * **Size-Guided Chunking:** Prioritizes splitting text into semantic blocks while respecting the maximum `chunk_size`.
+  * **Context Preservation:** Maintains `chunk_overlap` to minimize information loss at chunk boundaries.
+  * **Separator Handling:** Selects the most appropriate delimiter (e.g., line breaks, spaces) based on the text content.
+  * **Metadata Generation:** Creates `%Chunker.Chunk{}` structs containing the split text and its original byte range.
+  * **Oversized Chunk Warnings:**  Provides feedback when chunks cannot be created due to misconfiguration or limitations of the input text.
+
+  **Algorithm Overview**
+
+  1. **Separator Prioritization:**  Establishes a list of potential separators (e.g., line breaks, spaces), ordered by their expected relevance to the text structure.
+  2. **Recursive Splitting:**
+    *  Iterates through the separator list.
+    *  Attempts to split the text using the current separator.
+    *  If a split is successful, recursively applies the algorithm to any resulting sub-chunks that still exceed the `chunk_size`.
+  3. **Chunk Assembly:**
+    *  Combines smaller text segments into chunks, aiming to get as close to the `chunk_size` as possible.
+    *  Employs `chunk_overlap` to ensure smooth transitions between chunks.
+  4. **Metadata Generation:**  Tracks byte ranges for each chunk for potential reassembly of the original text.
   """
 
   @behaviour Chunker.SplitterBehaviour
@@ -17,7 +34,35 @@ defmodule Chunker.Splitters.RecursiveSplit do
   @impl true
   @spec split(binary(), keyword()) :: [binary()]
   @doc """
-  Splits the given text into chunks based on specified options, using a recursive strategy
+  Splits the given text into chunks using a recursive strategy. Prioritizes compliance
+  with  the configured `chunk_size` as a maximum, while aiming to maintain `chunk_overlap` for
+  context preservation.  Intelligently handles various separators for flexible splitting.
+
+  ## Options
+
+  * `:chunk_size` (integer) - Target size in bytes for each chunk.
+  * `:chunk_overlap` (integer) - Number of overlapping bytes between chunks.
+  * `:format` (atom) -  The format of the input text (influences separator selection).
+
+  ## Examples
+
+  ```elixir
+  iex> long_text = "This is a very long text that needs to be split into smaller pieces for easier handling."
+
+  iex> Chunker.Splitters.RecursiveSplit.split(long_text, chunk_size: 15, chunk_overlap: 5)
+  [
+    %Chunker.Chunk{
+      start_byte: 0,
+      end_byte: 47,
+      text: "This is a very long text that needs to be split"
+    },
+    %Chunker.Chunk{
+      start_byte: 38,
+      end_byte: 88,
+      text: " be split into smaller pieces for easier handling."
+    }
+  ]
+  ```
   """
   def split(text, opts) do
     separators = Separators.get_separators(opts[:format])
@@ -62,7 +107,7 @@ defmodule Chunker.Splitters.RecursiveSplit do
 
   defp perform_split(text, separators, chunk_size, chunk_overlap) do
     {current_separator, remaining_separators} = get_active_separator(separators, text)
-
+    ### **Recursive Splitting:**
     {final_chunks, good_splits} =
       current_separator
       |> split_on_separator(text)
@@ -107,6 +152,7 @@ defmodule Chunker.Splitters.RecursiveSplit do
     final_chunks
   end
 
+  ### **Chunk Assembly:**
   defp merge_good_splits_into_final_chunks(good_splits, final_chunks, chunk_size, chunk_overlap, separator \\ "") do
     case good_splits do
       [] -> final_chunks

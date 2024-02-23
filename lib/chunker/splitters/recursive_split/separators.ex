@@ -1,9 +1,13 @@
 defmodule Chunker.Splitters.RecursiveSplit.Separators do
   @moduledoc """
-  A module to store the separators that we use chunk up the text using recursive split.
+  Handles separator configuration for the RecursiveSplit text chunking strategy.
 
-  The order of these separators is important; the text chunking works by recursively
-  splitting these separators, going from left to right eg [separator | rest].
+  Provides predefined lists of separators tailored for different text formats. The order of separators is crucial, as the splitting algorithm prioritizes them sequentially.
+
+  **Key Features:**
+
+  * **Format-Specific Separators:** Customizes splitting behavior based on formats like Markdown, plain text, Elixir, and others.
+  * **Prioritized Splitting:** Attempts to split text using the highest-priority separator applicable to the text's content.\
   """
 
   @plaintext_formats [
@@ -17,6 +21,9 @@ defmodule Chunker.Splitters.RecursiveSplit.Separators do
   ]
 
   @spec get_separators(atom) :: [String.t()]
+  @doc """
+  Returns a list of separators that will be used to split the document of the given format
+  """
   def get_separators(:markdown) do
     [
       "\n## ",
