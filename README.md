@@ -6,9 +6,9 @@ Chunker is an Elixir library designed to segment text effectively, prioritizing 
 
 - Semantic Splitting: Prioritizes splitting text into meaningful blocks based on separators relevant to the specified format (e.g., headings, paragraphs in Markdown).
 - Configurable Chunking: Fine-tune the splitting process with options for:
- - `chunk_size` (approximate target chunk size, a maximum)
- - `chunk_overlap` (contextual overlap between chunks)
- - `format` (informs separator selection)
+  - `chunk_size` (approximate target chunk size, a maximum)
+  - `chunk_overlap` (contextual overlap between chunks)
+  - `format` (informs separator selection)
 - Metadata Tracking: Automatically generates Chunk structs containing byte range information for accurately reassembling the original text if needed.
 - Extensibility: Designed to accommodate additional splitting strategies in the future.
 
