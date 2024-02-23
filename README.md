@@ -6,9 +6,6 @@ Chunker is an Elixir library designed to segment text effectively, prioritizing 
 
 - Semantic Splitting: Prioritizes splitting text into meaningful blocks based on separators relevant to the specified format (e.g., headings, paragraphs in Markdown).
 - Configurable Chunking: Fine-tune the splitting process with options for:
-  - `chunk_size` (approximate target chunk size, a maximum)
-  - `chunk_overlap` (contextual overlap between chunks)
-  - `format` (informs separator selection)
 - Metadata Tracking: Automatically generates Chunk structs containing byte range information for accurately reassembling the original text if needed.
 - Extensibility: Designed to accommodate additional splitting strategies in the future.
 
@@ -59,9 +56,13 @@ The split method returns `Chunks` of your text. These chunks include the start a
   }
 ```
 
-### Configuration
+### Options
 
-If you wish to adjust these parameters, configuration can optionally be passed via a keyword list. Adjustable parameters include `:chunk_size`, `:chunk_overlap`,`:format` and `:strategy`:
+If you wish to adjust these parameters, configuration can optionally be passed via a keyword list. 
+
+  - `chunk_size` -  The approximate target chunk size, as measured per code points. This means that both `a` and `👻` count as one. Chunks will not exceed this maximum, but may sometimes be smaller. **Important note** This means that graphemes *will* be split. For example, `👩‍🚒` will be split into `👩,🚒`. This is a known limitation that we intend to address in the future.
+  - `chunk_overlap` - The contextual overlap between chunks, as measured per code point. Overlap is *not* guaranteed; again this should be treated as a maximum. The size of an individual overlap will depend on the semantics of the text being split.
+  - `format` (informs separator selection). Because we are trying to preserve meaning between the chunks, the format of the text we are splitting is important. It's important to split newlines in plain text; it's important to split `###` headings in markdown.
 
 ```elixir
 text = """

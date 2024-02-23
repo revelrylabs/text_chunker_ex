@@ -161,6 +161,19 @@ defmodule TextChunkerTest do
       assert result == expected_result
     end
 
+    test "splits up composite emojis" do
+      opts = [
+        chunk_size: 10,
+        chunk_overlap: 2
+      ]
+
+      text = "👨‍👩‍👧‍👦👍🏿"
+      result = text |> TextChunker.split(opts) |> TestHelpers.extract_text_from_chunks()
+
+      expected_result = ["👨‍👩‍👧", "‍👧‍👦👍", "👦👍🏿"]
+      assert result == expected_result
+    end
+
     test "splits text into chunks which have the same number of bytes as the original file" do
       {:ok, text} = File.read("test/support/fixtures/document_fixtures/hamlet.txt")
 
