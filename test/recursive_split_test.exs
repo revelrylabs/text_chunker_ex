@@ -6,7 +6,7 @@ defmodule TextChunkerTest do
 
   @moduletag timeout: :infinity
 
-  describe "plaintext splitter" do
+  describe "plaintext chunker" do
     test "splits multiple sentences correctly" do
       opts = [
         chunk_size: 50,
@@ -53,14 +53,14 @@ defmodule TextChunkerTest do
         format: :plaintext
       ]
 
-      text = "This is a text splitter.\nIt splits text.\n\nThis is a completely separate paragraph of context."
+      text = "This is a text chunker.\nIt splits text.\n\nThis is a completely separate paragraph of context."
 
       result = text |> TextChunker.split(opts) |> TestHelpers.extract_text_from_chunks()
 
       expected_result = [
         "This is a",
         " a text",
-        " splitter.",
+        " chunker.",
         "\nIt splits",
         " text.",
         "\n",
@@ -140,7 +140,7 @@ defmodule TextChunkerTest do
         |> TestHelpers.extract_text_from_chunks()
         |> Enum.take(2)
 
-      expected_result = TestHelpers.first_split_hamlet()
+      expected_result = TestHelpers.first_chunk_hamlet()
 
       assert result == expected_result
     end
@@ -204,7 +204,7 @@ defmodule TextChunkerTest do
     end
   end
 
-  describe "markdown splitter" do
+  describe "markdown chunker" do
     test "splits a simple markdown file" do
       opts = [
         chunk_size: 100,

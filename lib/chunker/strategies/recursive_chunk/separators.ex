@@ -1,6 +1,6 @@
-defmodule Chunker.Splitters.RecursiveSplit.Separators do
+defmodule Chunker.Strategies.RecursiveChunk.Separators do
   @moduledoc """
-  Handles separator configuration for the RecursiveSplit text chunking strategy.
+  Handles separator configuration for the RecursiveChunk text chunking strategy.
 
   Provides predefined lists of separators tailored for different text formats. The order of separators is crucial, as the splitting algorithm prioritizes them sequentially.
 

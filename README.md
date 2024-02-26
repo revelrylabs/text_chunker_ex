@@ -1,13 +1,13 @@
 # Chunker: Flexible Text Chunking for Elixir
 
-Chunker is an Elixir library designed to segment text effectively, prioritizing context preservation and adaptability. It's ideal for analytical, NLP, and other applications where understanding the relationship between text segments is crucial.
+Chunker is an Elixir library for segmenting large text documents, optimizing them for efficient embedding and storage within vector databases for use in resource augmented generation applications. It prioritizes context preservation and adaptability, and is therefore ideal for analytical, NLP, and other applications where understanding the relationship between text segments is crucial.
 
 ## Key Features
 
-- Semantic Splitting: Prioritizes splitting text into meaningful blocks based on separators relevant to the specified format (e.g., headings, paragraphs in Markdown).
-- Configurable Chunking: Fine-tune the splitting process with options for:
+- Semantic Chunking: Prioritizes chunking text into meaningful blocks based on separators relevant to the specified format (e.g., headings, paragraphs in Markdown).
+- Configurable Chunking: Fine-tune the chunking process with options for, text chunk size, overlap and format.
 - Metadata Tracking: Automatically generates Chunk structs containing byte range information for accurately reassembling the original text if needed.
-- Extensibility: Designed to accommodate additional splitting strategies in the future.
+- Extensibility: Designed to accommodate additional chunking strategies in the future.
 
 
 ## Installation
@@ -44,7 +44,7 @@ text = "Your text to be split..."
 chunks = TextChunker.split(text)
 ```
 
-This will split your text using the default parameters - a chunk size of `1000`, chunk overlap of `200`, format of :`plaintext` and using the `RecursiveSplit` strategy.
+This will split your text using the default parameters - a chunk size of `1000`, chunk overlap of `200`, format of :`plaintext` and using the `RecursiveChunk` strategy.
 
 The split method returns `Chunks` of your text. These chunks include the start and end bytes of each chunk.
 
@@ -71,7 +71,7 @@ text = """
 Let's split your text up properly!
 """
 opts = [chunk_size: 10, chunk_overlap: 5, format: :markdown]
-chunks = RecursiveSplit.split(text, opts)
+chunks = TextChunker.split(text, opts)
 ```
 
 ### Splitting Strategies
@@ -88,7 +88,7 @@ You can use Recursive Split to split text up into any chunk size you wish, with 
 alias Chunker.TextChunker
 
 text = "This is a sample text. It will be split into properly-sized chunks using the Chunker library."
-opts = [chunk_size: 50, chunk_overlap: 5, format: :plaintext, strategy: &RecursiveSplit.split/2,]
+opts = [chunk_size: 50, chunk_overlap: 5, format: :plaintext, strategy: &TextChunker.split/2,]
 
 iex> TextChunker.split(text, opts)
 
@@ -111,16 +111,13 @@ iex> TextChunker.split(text, opts)
 ]
 ```
 
-## Contributing
+## Contributing and Development
 
-We welcome contributions to Chunker! Here's how you can help:
+See CONTRIBUTING.md for guidance on how to develop for this library.
 
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b my-new-feature`).
-3. Make your changes.
-4. Commit your changes (`git commit -am 'Add some feature'`).
-5. Push to the branch (`git push origin my-new-feature`).
-6. Create a new Pull Request.
+Bug reports and pull requests are welcome on GitHub at https://github.com/revelrylabs/exdr. Check out CONTRIBUTING.md for more info.
+
+Everyone is welcome to participate in the project. We expect contributors to adhere to the Contributor Covenant Code of Conduct (see CODE_OF_CONDUCT.md).
 
 ## Acknowledgments
 
