@@ -7,9 +7,10 @@ permissions:
 
 jobs:
   build:
-    name: Build and test
+    name: test and deploy
     runs-on: ubuntu-22.04
     env:
+      HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
       MIX_ENV: test
     strategy:
       matrix:
@@ -31,3 +32,7 @@ jobs:
         run: mix deps.get
       - name: Run tests
         run: mix test
+      - name: Deploy package
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: mix hex.publish --yes
+        
