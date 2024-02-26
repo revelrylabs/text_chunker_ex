@@ -1,7 +1,6 @@
 name: Test
 on:
   push:
-    branches: [ $default-branch ]
 
 permissions:
   contents: read
