@@ -2,11 +2,10 @@
 
 ## Development Setup
 
-1. Make sure you have Elixir 1.7+ installed
+1. Make sure you have Elixir 1.15+ installed
 1. Clone the repo
-1. Run `mix do deps.get, compile`
-1. Run `mix test` or `bin/coverage_dev` to run tests
-
+1. Run `mix deps.get`
+1. Run `mix test`
 
 ## Submitting Changes
 
