@@ -1,8 +1,10 @@
 # Chunker: Flexible Text Chunking for Elixir
 
-![test](https://github.com/revelrylabs/text_chunker_ex/actions/workflows/test.yml/badge.svg)
+![tests](https://github.com/revelrylabs/text_chunker_ex/actions/workflows/test.yml/badge.svg)
 
-Chunker is an Elixir library for segmenting large text documents, optimizing them for efficient embedding and storage within vector databases for use in resource augmented generation applications. It prioritizes context preservation and adaptability, and is therefore ideal for analytical, NLP, and other applications where understanding the relationship between text segments is crucial.
+Chunker is an Elixir library for segmenting large text documents, optimizing them for efficient embedding and storage within vector databases for use in resource augmented generation (RAG) applications. 
+
+It prioritizes context preservation and adaptability, and is therefore ideal for analytical, NLP, and other applications where understanding the relationship between text segments is crucial.
 
 ## Key Features
 
@@ -38,7 +40,7 @@ Begin by aliasing Chunker:
 alias Chunker.TextChunker
 ```
 
-Split your text using the `split` function:
+Chunk your text using the `split` function:
 
 ```elixir
 text = "Your text to be split..."
@@ -46,7 +48,7 @@ text = "Your text to be split..."
 chunks = TextChunker.split(text)
 ```
 
-This will split your text using the default parameters - a chunk size of `1000`, chunk overlap of `200`, format of :`plaintext` and using the `RecursiveChunk` strategy.
+This will chunk up your text using the default parameters - a chunk size of `1000`, chunk overlap of `200`, format of :`plaintext` and using the `RecursiveChunk` strategy.
 
 The split method returns `Chunks` of your text. These chunks include the start and end bytes of each chunk.
 
@@ -76,13 +78,13 @@ opts = [chunk_size: 10, chunk_overlap: 5, format: :markdown]
 chunks = TextChunker.split(text, opts)
 ```
 
-### Splitting Strategies
+### Chunking Strategies
 
-Currently, we only implement one strategy choice: Recursive Split. This was reverse-engineered from LangChain, with plans to add more methods in the future. 
+Currently, we only implement one strategy choice: Recursive Chunk. This was reverse-engineered from LangChain, with plans to add more methods in the future. 
 
-#### Recursive Split (current default)
+#### Recursive Chunk (current default)
 
-You can use Recursive Split to split text up into any chunk size you wish, with or without overlap. It is important to note that this overlap is not guaranteed - rather, if the overlap makes sense, this is the max length for that overlap. Recursive Split prioritizes keeping the semantics intact (as defined by the separators derived from the input format). The overlap does not occur when such an overlap would break those semantics. See below for examples.
+You can use Recursive Chunk to split text up into any chunk size you wish, with or without overlap. It is important to note that this overlap is not guaranteed - rather, if the overlap makes sense, this is the max length for that overlap. Recursive Chunk prioritizes keeping the semantics intact (as defined by the separators derived from the input format). The overlap does not occur when such an overlap would break those semantics. See below for examples.
 
 ## Examples
 
@@ -115,11 +117,9 @@ iex> TextChunker.split(text, opts)
 
 ## Contributing and Development
 
-See CONTRIBUTING.md for guidance on how to develop for this library.
+Bug reports and pull requests are welcome on GitHub at https://github.com/revelrylabs/text_chunker_ex. Check out the [contributing guidelines](CONTRIBUTING.md) for more info.
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/revelrylabs/exdr. Check out CONTRIBUTING.md for more info.
-
-Everyone is welcome to participate in the project. We expect contributors to adhere to the Contributor Covenant Code of Conduct (see CODE_OF_CONDUCT.md).
+Everyone is welcome to participate in the project. We expect contributors to adhere to the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Acknowledgments
 
