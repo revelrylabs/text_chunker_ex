@@ -1,10 +1,17 @@
 # Chunker: Flexible Text Chunking for Elixir
 
-![tests](https://github.com/revelrylabs/text_chunker_ex/actions/workflows/test.yml/badge.svg)
-
+## About
 Chunker is an Elixir library for segmenting large text documents, optimizing them for efficient embedding and storage within vector databases for use in resource augmented generation (RAG) applications. 
 
 It prioritizes context preservation and adaptability, and is therefore ideal for analytical, NLP, and other applications where understanding the relationship between text segments is crucial.
+
+## Motivation
+
+Fill the gap in the Elixir ecosystem for a good semantic text chunker, and give access to langchain-style chunking.
+
+## Build Status
+
+![tests](https://github.com/revelrylabs/text_chunker_ex/actions/workflows/test.yml/badge.svg)
 
 ## Key Features
 
