@@ -32,7 +32,7 @@ defmodule Chunker.Strategies.RecursiveChunk do
   require Logger
 
   @impl true
-  @spec split(binary(), keyword()) :: [binary()]
+  @spec split(binary(), keyword()) :: [Chunk.t()]
   @doc """
   Splits the given text into chunks using a recursive strategy. Prioritizes compliance
   with  the configured `chunk_size` as a maximum, while aiming to maintain `chunk_overlap` for
