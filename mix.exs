@@ -36,7 +36,7 @@ defmodule TextChunker.MixProject do
   defp deps do
     [
       {:styler, "~> 0.7", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.31", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.31", only: [:dev, :test], runtime: false},
     ]
   end
 
