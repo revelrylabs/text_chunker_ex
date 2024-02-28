@@ -99,7 +99,7 @@ You can use Recursive Chunk to split text up into any chunk size you wish, with 
 alias Chunker.TextChunker
 
 text = "This is a sample text. It will be split into properly-sized chunks using the Chunker library."
-opts = [chunk_size: 50, chunk_overlap: 5, format: :plaintext, strategy: &TextChunker.split/2,]
+opts = [chunk_size: 50, chunk_overlap: 5, format: :plaintext, strategy: &Chunker.Strategies.RecursiveChunk.split/2]
 
 iex> TextChunker.split(text, opts)
 
