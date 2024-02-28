@@ -28,7 +28,7 @@ Add Chunker to your mix.exs:
 ```elixir
 def deps do
   [
-    {:chunker, "~> 0.1.0"}
+    {:chunker, "~> 0.1.1"}
   ]
 end
 ```
