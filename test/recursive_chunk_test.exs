@@ -5,7 +5,7 @@ defmodule TextChunkerTest do
 
   @moduletag timeout: :infinity
 
-  describe "plaintext chunker" do
+  describe "chunker with plaintext separators" do
     test "splits multiple sentences correctly" do
       opts = [
         chunk_size: 50,
@@ -203,7 +203,7 @@ defmodule TextChunkerTest do
     end
   end
 
-  describe "markdown chunker" do
+  describe "chunker with markdown separators" do
     test "splits a simple markdown file" do
       opts = [
         chunk_size: 100,
@@ -228,6 +228,129 @@ defmodule TextChunkerTest do
         "\n\nPlease make sure to update tests as appropriate.\n",
         "\n## License\n\n[MIT](https://choosealicense.com/licenses/mit/)"
       ]
+
+      assert result == expected_result
+    end
+  end
+
+  describe "chunker with python separators" do
+    test "splits a simple python file sensibly with no overlap" do
+      opts = [
+        chunk_size: 100,
+        chunk_overlap: 0,
+        format: :python
+      ]
+
+      {:ok, text} = File.read("test/support/fixtures/document_fixtures/test_code.py")
+
+      result = text |> TextChunker.split(opts) |> TestHelpers.extract_text_from_chunks()
+
+      expected_result =
+        [
+          "class PetShop:\n    \"\"\"Represents a pet shop with inventory and sales functionality.\"\"\"",
+          "\n\n    def __init__(self, name):\n        self.name = name\n        self.inventory = {}",
+          "\n\n    def add_pet(self, pet_type, quantity):",
+          "\n        \"\"\"Adds a specified quantity of a pet type to the inventory.\"\"\"",
+          "\n        if pet_type in self.inventory:\n            self.inventory[pet_type] += quantity",
+          "\n        else:\n            self.inventory[pet_type] = quantity",
+          "\n\n    def sell_pet(self, pet_type, quantity):",
+          "\n        \"\"\"Sells a specified quantity of a pet type.\"\"\"",
+          "\n        if pet_type in self.inventory and self.inventory[pet_type] >= quantity:",
+          "\n            self.inventory[pet_type] -= quantity\n            return True\n        else:",
+          "\n            return False",
+          "\n\n    def get_pet_count(self, pet_type):",
+          "\n        \"\"\"Returns the current count of a specific pet type.\"\"\"",
+          "\n        return self.inventory.get(pet_type, 0)\n"
+        ]
+
+      assert result == expected_result
+    end
+
+    test "splits a simple python file sensibly with overlap" do
+      opts = [
+        chunk_size: 100,
+        chunk_overlap: 50,
+        format: :python
+      ]
+
+      {:ok, text} = File.read("test/support/fixtures/document_fixtures/test_code.py")
+
+      result = text |> TextChunker.split(opts) |> TestHelpers.extract_text_from_chunks()
+
+      expected_result =
+        [
+          "class PetShop:\n    \"\"\"Represents a pet shop with inventory and sales functionality.\"\"\"",
+          "\n\n    def __init__(self, name):\n        self.name = name\n        self.inventory = {}",
+          "\n\n    def add_pet(self, pet_type, quantity):",
+          "\n        \"\"\"Adds a specified quantity of a pet type to the inventory.\"\"\"",
+          "\n        if pet_type in self.inventory:\n            self.inventory[pet_type] += quantity",
+          "\n            self.inventory[pet_type] += quantity\n        else:",
+          "\n        else:\n            self.inventory[pet_type] = quantity",
+          "\n\n    def sell_pet(self, pet_type, quantity):",
+          "\n    def sell_pet(self, pet_type, quantity):\n        \"\"\"Sells a specified quantity of a pet type.\"\"\"",
+          "\n        if pet_type in self.inventory and self.inventory[pet_type] >= quantity:",
+          "\n            self.inventory[pet_type] -= quantity\n            return True\n        else:",
+          "\n            return True\n        else:\n            return False",
+          "\n\n    def get_pet_count(self, pet_type):",
+          "\n        \"\"\"Returns the current count of a specific pet type.\"\"\"",
+          "\n        return self.inventory.get(pet_type, 0)\n"
+        ]
+
+      assert result == expected_result
+    end
+  end
+
+  describe "chunker with javascript separators" do
+    test "splits a simple javascript file sensibly with no overlap" do
+      opts = [
+        chunk_size: 100,
+        chunk_overlap: 0,
+        format: :javascript
+      ]
+
+      {:ok, text} = File.read("test/support/fixtures/document_fixtures/test_code.js")
+
+      result = text |> TextChunker.split(opts) |> TestHelpers.extract_text_from_chunks()
+
+      expected_result =
+        [
+          "class PetShop {\n  constructor(name) {\n      this.name = name;\n      this.inventory = {};\n  }",
+          "\n\n  addPet(petType, quantity) {\n    ",
+          "  if (this.inventory[petType]) {\n          this.inventory[petType] += quantity;\n      } else {",
+          "\n          this.inventory[petType] = quantity;\n      }\n  }",
+          "\n\n  sellPet(petType, quantity) {\n    ",
+          "  if (this.inventory[petType] && this.inventory[petType] >= quantity) {",
+          "\n          this.inventory[petType] -= quantity;\n          return true;\n      } else {",
+          "\n          return false;\n      }\n  }",
+          "\n\n  getPetCount(petType) {\n      return this.inventory[petType] || 0; \n  }\n}"
+        ]
+
+      assert result == expected_result
+    end
+
+    test "splits a simple javascript file sensibly with overlap" do
+      opts = [
+        chunk_size: 100,
+        chunk_overlap: 50,
+        format: :javascript
+      ]
+
+      {:ok, text} = File.read("test/support/fixtures/document_fixtures/test_code.js")
+
+      result = text |> TextChunker.split(opts) |> TestHelpers.extract_text_from_chunks()
+
+      expected_result =
+        [
+          "class PetShop {\n  constructor(name) {\n      this.name = name;\n      this.inventory = {};\n  }",
+          "\n\n  addPet(petType, quantity) {\n    ",
+          "  if (this.inventory[petType]) {\n          this.inventory[petType] += quantity;\n      } else {",
+          "\n      } else {\n          this.inventory[petType] = quantity;\n      }\n  }",
+          "\n\n  sellPet(petType, quantity) {\n    ",
+          "  if (this.inventory[petType] && this.inventory[petType] >= quantity) {",
+          "\n          this.inventory[petType] -= quantity;\n          return true;\n      } else {",
+          "\n          return true;\n      } else {\n          return false;\n      }\n  }",
+          "\n\n  getPetCount(petType) {\n      return this.inventory[petType] || 0; \n  }\n}"
+        ]
 
       assert result == expected_result
     end
