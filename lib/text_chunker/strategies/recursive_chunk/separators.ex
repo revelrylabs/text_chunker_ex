@@ -1,4 +1,4 @@
-defmodule Chunker.Strategies.RecursiveChunk.Separators do
+defmodule TextChunker.Strategies.RecursiveChunk.Separators do
   @moduledoc """
   Handles separator configuration for the RecursiveChunk text chunking strategy.
 

@@ -1,4 +1,4 @@
-defmodule Chunker.Chunk do
+defmodule TextChunker.Chunk do
   @moduledoc """
   Defines the `Chunk` struct, representing a contiguous block of text extracted during the splitting process. It stores the text content along with its corresponding byte range within the original input text.
   """

@@ -1,7 +1,7 @@
-# Chunker: Flexible Text Chunking for Elixir
+# TextChunker: Flexible Text Chunking for Elixir
 
 ## About
-Chunker is an Elixir library for segmenting large text documents, optimizing them for efficient embedding and storage within vector databases for use in resource augmented generation (RAG) applications. 
+TextChunker is an Elixir library for segmenting large text documents, optimizing them for efficient embedding and storage within vector databases for use in resource augmented generation (RAG) applications. 
 
 It prioritizes context preservation and adaptability, and is therefore ideal for analytical, NLP, and other applications where understanding the relationship between text segments is crucial.
 
@@ -23,12 +23,12 @@ Fill the gap in the Elixir ecosystem for a good semantic text chunker, and give 
 
 ## Installation
 
-Add Chunker to your mix.exs:
+Add TextChunker to your mix.exs:
 
 ```elixir
 def deps do
   [
-    {:chunker, "~> 0.1.1"}
+    {:text_chunker, "~> 0.1.1"}
   ]
 end
 ```
@@ -40,12 +40,6 @@ mix deps.get
 ```
 
 ## Usage
-
-Begin by aliasing Chunker:
-
-```elixir
-alias Chunker.TextChunker
-```
 
 Chunk your text using the `split` function:
 
@@ -96,8 +90,6 @@ You can use Recursive Chunk to split text up into any chunk size you wish, with 
 ## Examples
 
 ```elixir
-alias Chunker.TextChunker
-
 text = "This is a sample text. It will be split into properly-sized chunks using the Chunker library."
 opts = [chunk_size: 50, chunk_overlap: 5, format: :plaintext, strategy: &Chunker.Strategies.RecursiveChunk.split/2]
 
@@ -134,4 +126,4 @@ Special thanks to the creators of langchain for their initial approach to recurs
 
 ## License
 
-Chunker is released under the MIT License. See the [LICENSE](LICENSE) file for details.
+TextChunker is released under the MIT License. See the [LICENSE](LICENSE) file for details.
