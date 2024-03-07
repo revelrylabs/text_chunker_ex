@@ -1,18 +1,15 @@
-name: Test
+name: Deploy
 on:
-  push:
-    branches:
-      - main
-permissions:
-  contents: read
+  release:
+    types: [published]
 
 jobs:
   build:
-    name: test
+    name: test and deploy
     runs-on: ubuntu-22.04
     env:
       HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
-      MIX_ENV: test
+      MIX_ENV: prod
     strategy:
       matrix:
         otp: ["25.2"]
@@ -33,4 +30,6 @@ jobs:
         run: mix deps.get
       - name: Run tests
         run: mix test
+      - name: Deploy package
+        run: mix hex.publish --yes
         
