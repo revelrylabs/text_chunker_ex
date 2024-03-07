@@ -132,9 +132,15 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/revelr
 
 Everyone is welcome to participate in the project. We expect contributors to adhere to the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
 
+## Releases
+
+See [RELEASES.md](RELEASES.md) for details about the release process.
+
+
 ## Acknowledgments
 
 Special thanks to the creators of Langchain for their initial approach to recursive text splitting, which inspired this library. See the [NOTICE](NOTICE) file for details.
+
 
 ## License
 

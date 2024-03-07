@@ -53,6 +53,7 @@ defmodule TextChunker.MixProject do
       extras:
         [
           "CODE_OF_CONDUCT.md",
+          "RELEASES.md",
           "CONTRIBUTING.md",
           "README.md",
           "LICENSE",
