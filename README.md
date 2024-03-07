@@ -91,6 +91,18 @@ You can use Recursive Chunk to split text up into any chunk size you wish, with 
 
 ```elixir
 text = "This is a sample text. It will be split into properly-sized chunks using the TextChunker library."
+
+iex(10)> TextChunker.split(text)
+
+[
+  %TextChunker.Chunk{
+    start_byte: 0,
+    end_byte: 97,
+    text: "This is a sample text. It will be split into properly-sized chunks using the TextChunker library."
+  }
+]
+
+text = "This is a sample text. It will be split into properly-sized chunks using the TextChunker library."
 opts = [chunk_size: 50, chunk_overlap: 5, format: :plaintext, strategy: &TextChunker.Strategies.RecursiveChunk.split/2]
 
 iex(10)> TextChunker.split(text, opts)
