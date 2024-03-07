@@ -60,7 +60,7 @@ This will chunk up your text using the default parameters - a chunk size of `100
 The split method returns `Chunks` of your text. These chunks include the start and end bytes of each chunk.
 
 ```elixir
-%Chunker.Chunk{
+%TextChunker.Chunk{
     start_byte: 0,
     end_byte: 44,
     text: "This is a sample text. It will be split into",
@@ -96,28 +96,27 @@ You can use Recursive Chunk to split text up into any chunk size you wish, with 
 ## Examples
 
 ```elixir
-alias Chunker.TextChunker
+text = "This is a sample text. It will be split into properly-sized chunks using the TextChunker library."
 
-text = "This is a sample text. It will be split into properly-sized chunks using the Chunker library."
-opts = [chunk_size: 50, chunk_overlap: 5, format: :plaintext, strategy: &Chunker.Strategies.RecursiveChunk.split/2]
+opts = [chunk_size: 50, chunk_overlap: 5, format: :plaintext, strategy: &TextChunker.Strategies.RecursiveChunk.split/2]
 
-iex> TextChunker.split(text, opts)
+iex(10)> TextChunker.split(text, opts)
 
 [
-  %Chunker.Chunk{
+  %TextChunker.Chunk{
     start_byte: 0,
     end_byte: 44,
-    text: "This is a sample text. It will be split into",
+    text: "This is a sample text. It will be split into"
   },
-  %Chunker.Chunk{
+  %TextChunker.Chunk{
     start_byte: 39,
-    end_byte: 84,
-    text: " into properly-sized chunks using the Chunker",
+    end_byte: 88,
+    text: " into properly-sized chunks using the TextChunker"
   },
-  %Chunker.Chunk{
-    start_byte: 84,
-    end_byte: 93,
-    text: " library.",
+  %TextChunker.Chunk{
+    start_byte: 88,
+    end_byte: 97,
+    text: " library."
   }
 ]
 ```
@@ -130,7 +129,7 @@ Everyone is welcome to participate in the project. We expect contributors to adh
 
 ## Acknowledgments
 
-Special thanks to the creators of langchain for their initial approach to recursive text splitting, which inspired this library. See the [NOTICE](NOTICE) file for details.
+Special thanks to the creators of Langchain for their initial approach to recursive text splitting, which inspired this library. See the [NOTICE](NOTICE) file for details.
 
 ## License
 

@@ -8,7 +8,7 @@ defmodule Chunker.Strategies.RecursiveChunk do
   * **Size-Guided Chunking:** Prioritizes splitting text into semantic blocks while respecting the maximum `chunk_size`.
   * **Context Preservation:** Maintains `chunk_overlap` to minimize information loss at chunk boundaries.
   * **Separator Handling:** Selects the most appropriate delimiter (e.g., line breaks, spaces) based on the text content.
-  * **Metadata Generation:** Creates `%Chunker.Chunk{}` structs containing the split text and its original byte range.
+  * **Metadata Generation:** Creates `%TextChunker.Chunk{}` structs containing the split text and its original byte range.
   * **Oversized Chunk Warnings:**  Provides feedback when chunks cannot be created due to misconfiguration or limitations of the input text.
 
   **Algorithm Overview**
