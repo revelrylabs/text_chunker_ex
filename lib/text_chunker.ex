@@ -1,4 +1,4 @@
-defmodule Chunker.TextChunker do
+defmodule TextChunker do
   @moduledoc """
   Provides a high-level interface for text chunking, employing a configurable splitting strategy (defaults to recursive splitting).  Manages options and coordinates the process, tracking chunk metadata.
 
@@ -8,7 +8,7 @@ defmodule Chunker.TextChunker do
   * **Size and Overlap Control:**  Provides options for `:chunk_size` and `:chunk_overlap`.
   * **Metadata Tracking:**  Generates `Chunk` structs containing byte range information.
   """
-  alias Chunker.Strategies.RecursiveChunk
+  alias TextChunker.Strategies.RecursiveChunk
 
   @default_opts [
     chunk_size: 2000,
@@ -31,11 +31,11 @@ defmodule Chunker.TextChunker do
 
   ```elixir
   iex> long_text = "This is a very long text that needs to be split into smaller pieces for easier handling."
-  iex> Chunker.TextChunker.split(long_text)
+  iex> TextChunker.split(long_text)
   # => [%Chunk{}, %Chunk{}, ...]
   ```
 
-  iex> Chunker.TextChunker.split(long_text, chunk_size: 10, chunk_overlap: 3)
+  iex> TextChunker.split(long_text, chunk_size: 10, chunk_overlap: 3)
   # => Generates many smaller chunks with significant overlap
 
   """
