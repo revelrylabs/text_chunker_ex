@@ -1,4 +1,4 @@
-defmodule Chunker.Strategies.RecursiveChunk do
+defmodule TextChunker.Strategies.RecursiveChunk do
   @moduledoc """
   Handles recursive text splitting, aiming to adhere to configured size and overlap requirements.
   Employs a flexible separator-based approach to break down text into manageable chunks, while generating metadata for each produced chunk.
@@ -24,10 +24,10 @@ defmodule Chunker.Strategies.RecursiveChunk do
   4. **Metadata Generation:**  Tracks byte ranges for each chunk for potential reassembly of the original text.
   """
 
-  @behaviour Chunker.ChunkerBehaviour
+  @behaviour TextChunker.ChunkerBehaviour
 
-  alias Chunker.Chunk
-  alias Chunker.Strategies.RecursiveChunk.Separators
+  alias TextChunker.Chunk
+  alias TextChunker.Strategies.RecursiveChunk.Separators
 
   require Logger
 
@@ -49,14 +49,14 @@ defmodule Chunker.Strategies.RecursiveChunk do
   ```elixir
   iex> long_text = "This is a very long text that needs to be split into smaller pieces for easier handling."
 
-  iex> Chunker.Strategies.RecursiveChunk.split(long_text, chunk_size: 15, chunk_overlap: 5)
+  iex> TextChunker.Strategies.RecursiveChunk.split(long_text, chunk_size: 15, chunk_overlap: 5)
   [
-    %Chunker.Chunk{
+    %TextChunker.Chunk{
       start_byte: 0,
       end_byte: 47,
       text: "This is a very long text that needs to be split"
     },
-    %Chunker.Chunk{
+    %TextChunker.Chunk{
       start_byte: 38,
       end_byte: 88,
       text: " be split into smaller pieces for easier handling."

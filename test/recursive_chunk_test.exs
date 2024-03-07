@@ -1,8 +1,7 @@
 defmodule TextChunkerTest do
   use ExUnit.Case
 
-  alias Chunker.TestHelpers
-  alias Chunker.TextChunker
+  alias TextChunker.TestHelpers
 
   @moduletag timeout: :infinity
 

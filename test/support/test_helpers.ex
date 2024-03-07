@@ -1,9 +1,9 @@
-defmodule Chunker.TestHelpers do
+defmodule TextChunker.TestHelpers do
   @moduledoc false
   @doc """
   Extracts the text content from a single `Chunk` struct.
   """
-  def chunk_text(%Chunker.Chunk{} = chunk), do: chunk.text
+  def chunk_text(%TextChunker.Chunk{} = chunk), do: chunk.text
 
   @doc """
   Extracts the text content from a list of `Chunk` structs.
