@@ -322,7 +322,7 @@ defmodule TextChunkerTest do
           "  if (this.inventory[petType] && this.inventory[petType] >= quantity) {",
           "\n          this.inventory[petType] -= quantity;\n          return true;\n      } else {",
           "\n          return false;\n      }\n  }",
-          "\n\n  getPetCount(petType) {\n      return this.inventory[petType] || 0; \n  }\n}"
+          "\n\n  getPetCount(petType) {\n      return this.inventory[petType] || 0; \n  }\n}\n"
         ]
 
       assert result == expected_result
@@ -349,7 +349,7 @@ defmodule TextChunkerTest do
           "  if (this.inventory[petType] && this.inventory[petType] >= quantity) {",
           "\n          this.inventory[petType] -= quantity;\n          return true;\n      } else {",
           "\n          return true;\n      } else {\n          return false;\n      }\n  }",
-          "\n\n  getPetCount(petType) {\n      return this.inventory[petType] || 0; \n  }\n}"
+          "\n\n  getPetCount(petType) {\n      return this.inventory[petType] || 0; \n  }\n}\n"
         ]
 
       assert result == expected_result
