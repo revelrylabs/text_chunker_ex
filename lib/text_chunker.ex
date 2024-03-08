@@ -13,7 +13,7 @@ defmodule TextChunker do
   @default_opts [
     chunk_size: 2000,
     chunk_overlap: 200,
-    strategy: &RecursiveChunk.split/2,
+    strategy: RecursiveChunk,
     format: :plaintext
   ]
 
@@ -43,6 +43,6 @@ defmodule TextChunker do
   def split(text, opts \\ []) do
     opts = Keyword.merge(@default_opts, opts)
 
-    opts[:strategy].(text, opts)
+    opts[:strategy].split(text, opts)
   end
 end
