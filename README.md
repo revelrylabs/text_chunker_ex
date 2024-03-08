@@ -48,7 +48,7 @@ text = "Your text to be split..."
 chunks = TextChunker.split(text)
 ```
 
-This will chunk up your text using the default parameters - a chunk size of `1000`, chunk overlap of `200`, format of :`plaintext` and using the `RecursiveChunk` strategy.
+This will chunk up your text using the default parameters - a chunk size of `1000`, chunk overlap of `200`, format of `:plaintext` and using the `RecursiveChunk` strategy.
 
 The split method returns `Chunks` of your text. These chunks include the start and end bytes of each chunk.
 
@@ -66,7 +66,7 @@ If you wish to adjust these parameters, configuration can optionally be passed v
 
   - `chunk_size` -  The approximate target chunk size, as measured per code points. This means that both `a` and `👻` count as one. Chunks will not exceed this maximum, but may sometimes be smaller. **Important note** This means that graphemes *may* be split. For example, `👩‍🚒` may be split into `👩,🚒` or not depending on the split boundary.
   - `chunk_overlap` - The contextual overlap between chunks, as measured per code point. Overlap is *not* guaranteed; again this should be treated as a maximum. The size of an individual overlap will depend on the semantics of the text being split.
-  - `format` (informs separator selection). Because we are trying to preserve meaning between the chunks, the format of the text we are splitting is important. It's important to split newlines in plain text; it's important to split `###` headings in markdown.
+  - `format` - What informs separator selection. Because we are trying to preserve meaning between the chunks, the format of the text we are splitting is important. It's important to split newlines in plain text; it's important to split `###` headings in markdown.
 
 ```elixir
 text = """
@@ -102,7 +102,7 @@ iex(10)> TextChunker.split(text)
 ]
 
 text = "This is a sample text. It will be split into properly-sized chunks using the TextChunker library."
-opts = [chunk_size: 50, chunk_overlap: 5, format: :plaintext, strategy: &TextChunker.Strategies.RecursiveChunk.split/2]
+opts = [chunk_size: 50, chunk_overlap: 5, format: :plaintext, strategy: TextChunker.Strategies.RecursiveChunk]
 
 iex(10)> TextChunker.split(text, opts)
 
