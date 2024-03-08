@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
-      MIX_ENV: prod
+      MIX_ENV: test
     strategy:
       matrix:
         otp: ["25.2"]
