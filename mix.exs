@@ -35,8 +35,8 @@ defmodule TextChunker.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:styler, "~> 0.7", only: [:dev, :test, :prod], runtime: false},
-      {:ex_doc, "~> 0.31", only: [:dev, :test, :prod], runtime: false},
+      {:styler, "~> 0.7", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.29", only: [:dev, :test], runtime: false},
     ]
   end
 
