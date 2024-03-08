@@ -20,7 +20,6 @@ Fill the gap in the Elixir ecosystem for a good semantic text chunker, and give 
 - Metadata Tracking: Automatically generates Chunk structs containing byte range information for accurately reassembling the original text if needed.
 - Extensibility: Designed to accommodate additional chunking strategies in the future.
 
-
 ## Installation
 
 Add TextChunker to your mix.exs:
@@ -28,7 +27,7 @@ Add TextChunker to your mix.exs:
 ```elixir
 def deps do
   [
-    {:text_chunker, "~> 0.1.1"}
+    {:text_chunker, "~> 0.1.2"}
   ]
 end
 ```

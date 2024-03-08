@@ -2,7 +2,6 @@
 
 ## Preparation
 - [ ] Update the package version in `mix.exs`
-- [ ] Update `CHANGELOG.md` to describe the new changes
 - [ ] Update the package version badge and installation instructions in `README.md`
 
 ## Release Process
