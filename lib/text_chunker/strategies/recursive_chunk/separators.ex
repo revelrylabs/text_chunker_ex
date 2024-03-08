@@ -120,6 +120,17 @@ defmodule TextChunker.Strategies.RecursiveChunk.Separators do
     ]
   end
 
+  def get_separators(:python) do
+    [
+      "\nclass ",
+      "\ndef ",
+      "\n\tdef ",
+      "\n\n",
+      "\n",
+      " "
+    ]
+  end
+
   def get_separators(:vue) do
     [
       "<script",
