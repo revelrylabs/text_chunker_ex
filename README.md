@@ -1,7 +1,7 @@
 # TextChunker: Flexible Text Chunking for Elixir
 
 ## About
-TextChunker is an Elixir library for segmenting large text documents, optimizing them for efficient embedding and storage within vector databases for use in resource augmented generation (RAG) applications.
+TextChunker is an Elixir library for segmenting large text documents, optimizing them for efficient embedding and storage within vector databases for use in retrieval augmented generation (RAG) applications.
 
 It prioritizes context preservation and adaptability, and is therefore ideal for analytical, NLP, and other applications where understanding the relationship between text segments is crucial.
 
