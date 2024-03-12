@@ -27,7 +27,7 @@ Add TextChunker to your mix.exs:
 ```elixir
 def deps do
   [
-    {:text_chunker, "~> 0.1.2"}
+    {:text_chunker, "~> 0.2.0"}
   ]
 end
 ```

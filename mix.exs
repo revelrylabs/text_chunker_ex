@@ -2,7 +2,7 @@ defmodule TextChunker.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/revelrylabs/text_chunker_ex"
-  @version "0.1.2"
+  @version "0.2.0"
 
   def project do
     [
