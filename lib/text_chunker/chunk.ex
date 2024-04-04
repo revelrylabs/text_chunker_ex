@@ -9,8 +9,10 @@ defmodule TextChunker.Chunk do
           # Byte offset marking the end of the chunk
           end_byte: integer(),
           # The textual content of this chunk
-          text: String.t()
+          text: String.t(),
+          # Any additional metadata
+          metadata: map()
         }
 
-  defstruct [:start_byte, :end_byte, :text]
+  defstruct [:start_byte, :end_byte, :text, metadata: %{}]
 end

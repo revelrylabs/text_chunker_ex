@@ -355,4 +355,93 @@ defmodule TextChunkerTest do
       assert result == expected_result
     end
   end
+
+  describe "chunker returns metadata chunks correctly" do
+    test "returns an empty map as metadata when none is given" do
+      opts = [
+        chunk_size: 50,
+        chunk_overlap: 10,
+        format: :plaintext
+      ]
+
+      text =
+        "This is quite a short sentence. But what a headache does the darn thing create! Especially when splitting is involved. Do not look for meaning."
+
+      result =
+        TextChunker.split(text, opts)
+
+      expected_result = [
+        %TextChunker.Chunk{
+          start_byte: 0,
+          end_byte: 42,
+          text: "This is quite a short sentence. But what a",
+          metadata: %{}
+        },
+        %TextChunker.Chunk{
+          start_byte: 35,
+          end_byte: 79,
+          text: " what a headache does the darn thing create!",
+          metadata: %{}
+        },
+        %TextChunker.Chunk{
+          start_byte: 71,
+          end_byte: 121,
+          text: " create! Especially when splitting is involved. Do",
+          metadata: %{}
+        },
+        %TextChunker.Chunk{
+          start_byte: 118,
+          end_byte: 143,
+          text: " Do not look for meaning.",
+          metadata: %{}
+        }
+      ]
+
+      assert result == expected_result
+    end
+
+    test "returns chunks with metadata" do
+      opts = [
+        chunk_size: 50,
+        chunk_overlap: 10,
+        format: :plaintext,
+        metadata: %{title: "Short Sentence: A Side-Splitting Endeavour"}
+      ]
+
+      text =
+        "This is quite a short sentence. But what a headache does the darn thing create! Especially when splitting is involved. Do not look for meaning."
+
+      result =
+        TextChunker.split(text, opts)
+
+      expected_result = [
+        %TextChunker.Chunk{
+          start_byte: 0,
+          end_byte: 42,
+          text: "This is quite a short sentence. But what a",
+          metadata: %{title: "Short Sentence: A Side-Splitting Endeavour"}
+        },
+        %TextChunker.Chunk{
+          start_byte: 35,
+          end_byte: 79,
+          text: " what a headache does the darn thing create!",
+          metadata: %{title: "Short Sentence: A Side-Splitting Endeavour"}
+        },
+        %TextChunker.Chunk{
+          start_byte: 71,
+          end_byte: 121,
+          text: " create! Especially when splitting is involved. Do",
+          metadata: %{title: "Short Sentence: A Side-Splitting Endeavour"}
+        },
+        %TextChunker.Chunk{
+          start_byte: 118,
+          end_byte: 143,
+          text: " Do not look for meaning.",
+          metadata: %{title: "Short Sentence: A Side-Splitting Endeavour"}
+        }
+      ]
+
+      assert result == expected_result
+    end
+  end
 end

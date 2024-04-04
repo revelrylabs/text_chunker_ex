@@ -90,7 +90,12 @@ defmodule TextChunker.Strategies.RecursiveChunk do
             text: chunk
           }
 
-          chunks ++ [chunk]
+          if Enum.empty?(opts[:metadata]) do
+            chunks ++ [chunk]
+          else
+            metadata = opts[:metadata]
+            chunks ++ [%{chunk | metadata: metadata}]
+          end
         end
       end)
 

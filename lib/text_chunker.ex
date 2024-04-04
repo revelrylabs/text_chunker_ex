@@ -6,7 +6,7 @@ defmodule TextChunker do
 
   * **Customizable Splitting:**  Allows the splitting strategy to be customized via the `:strategy` option.
   * **Size and Overlap Control:**  Provides options for `:chunk_size` and `:chunk_overlap`.
-  * **Metadata Tracking:**  Generates `Chunk` structs containing byte range information.
+  * **Metadata Tracking:**  Generates `Chunk` structs containing byte range information, as well as providing an option to attach custom metadata
   """
   alias TextChunker.Strategies.RecursiveChunk
 
@@ -14,7 +14,8 @@ defmodule TextChunker do
     chunk_size: 2000,
     chunk_overlap: 200,
     strategy: RecursiveChunk,
-    format: :plaintext
+    format: :plaintext,
+    metadata: %{}
   ]
 
   @doc """
@@ -26,6 +27,7 @@ defmodule TextChunker do
   * `:chunk_overlap` (integer, default: 200) - Number of overlapping code points between consecutive chunks to preserve context.
   * `:strategy` (function, default: `&RecursiveChunk.split/2`) - A function taking two arguments (text and options) and returning a list of `%Chunk{}` structs. Currently only `&RecursiveChunk.split/2` is fully supported.
   * `:format` (atom, default: `:plaintext`) - The format of the input text. Used to determine where to split the text in some strategies.
+  * ':metadata` (map, default: `%{}`) - Any optional additional metadata to be added to each chunk
 
   ## Examples
 

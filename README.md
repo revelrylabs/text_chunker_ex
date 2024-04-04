@@ -17,7 +17,7 @@ Fill the gap in the Elixir ecosystem for a good semantic text chunker, and give 
 
 - Semantic Chunking: Prioritizes chunking text into meaningful blocks based on separators relevant to the specified format (e.g., headings, paragraphs in Markdown).
 - Configurable Chunking: Fine-tune the chunking process with options for, text chunk size, overlap and format.
-- Metadata Tracking: Automatically generates Chunk structs containing byte range information for accurately reassembling the original text if needed.
+- Metadata Tracking: Automatically generates `Chunk` structs containing byte range information for accurately reassembling the original text if needed. Additional custom metadata can also be added to all chunks.
 - Extensibility: Designed to accommodate additional chunking strategies in the future.
 
 ## Installation
@@ -48,7 +48,7 @@ text = "Your text to be split..."
 chunks = TextChunker.split(text)
 ```
 
-This will chunk up your text using the default parameters - a chunk size of `1000`, chunk overlap of `200`, format of `:plaintext` and using the `RecursiveChunk` strategy.
+This will chunk up your text using the default parameters - a chunk size of `1000`, chunk overlap of `200`, format of `:plaintext` and using the `RecursiveChunk` strategy. It will add no additional `:metadata`.
 
 The split method returns `Chunks` of your text. These chunks include the start and end bytes of each chunk.
 
@@ -57,6 +57,7 @@ The split method returns `Chunks` of your text. These chunks include the start a
     start_byte: 0,
     end_byte: 44,
     text: "This is a sample text. It will be split into",
+    metadata: %{}
   }
 ```
 
@@ -67,6 +68,7 @@ If you wish to adjust these parameters, configuration can optionally be passed v
   - `chunk_size` -  The approximate target chunk size, as measured per code points. This means that both `a` and `👻` count as one. Chunks will not exceed this maximum, but may sometimes be smaller. **Important note** This means that graphemes *may* be split. For example, `👩‍🚒` may be split into `👩,🚒` or not depending on the split boundary.
   - `chunk_overlap` - The contextual overlap between chunks, as measured per code point. Overlap is *not* guaranteed; again this should be treated as a maximum. The size of an individual overlap will depend on the semantics of the text being split.
   - `format` - What informs separator selection. Because we are trying to preserve meaning between the chunks, the format of the text we are splitting is important. It's important to split newlines in plain text; it's important to split `###` headings in markdown.
+  - `metadata` - Any additional fields to be added into each chunk. This can be useful for adding the name or title of the document from where the chunk comes from.
 
 ```elixir
 text = """
@@ -74,7 +76,7 @@ text = """
 
 Let's split your text up properly!
 """
-opts = [chunk_size: 10, chunk_overlap: 5, format: :markdown]
+opts = [chunk_size: 10, chunk_overlap: 5, format: :markdown, metadata: %{title: "A split document title", chapter: 1}]
 chunks = TextChunker.split(text, opts)
 ```
 
@@ -97,12 +99,13 @@ iex(10)> TextChunker.split(text)
   %TextChunker.Chunk{
     start_byte: 0,
     end_byte: 97,
-    text: "This is a sample text. It will be split into properly-sized chunks using the TextChunker library."
+    text: "This is a sample text. It will be split into properly-sized chunks using the TextChunker library.",
+    metadata: %{}
   }
 ]
 
 text = "This is a sample text. It will be split into properly-sized chunks using the TextChunker library."
-opts = [chunk_size: 50, chunk_overlap: 5, format: :plaintext, strategy: TextChunker.Strategies.RecursiveChunk]
+opts = [chunk_size: 50, chunk_overlap: 5, format: :plaintext, strategy: TextChunker.Strategies.RecursiveChunk, metadata: %{title: "Sample Text"}]
 
 iex(10)> TextChunker.split(text, opts)
 
@@ -110,17 +113,20 @@ iex(10)> TextChunker.split(text, opts)
   %TextChunker.Chunk{
     start_byte: 0,
     end_byte: 44,
-    text: "This is a sample text. It will be split into"
+    text: "This is a sample text. It will be split into",
+    metadata: %{title: "Sample Text"}
   },
   %TextChunker.Chunk{
     start_byte: 39,
     end_byte: 88,
-    text: " into properly-sized chunks using the TextChunker"
+    text: " into properly-sized chunks using the TextChunker",
+    metadata: %{title: "Sample Text"}
   },
   %TextChunker.Chunk{
     start_byte: 88,
     end_byte: 97,
-    text: " library."
+    text: " library.",
+    metadata: %{title: "Sample Text"}
   }
 ]
 ```
