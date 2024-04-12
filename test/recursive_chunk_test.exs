@@ -355,4 +355,49 @@ defmodule TextChunkerTest do
       assert result == expected_result
     end
   end
+
+  describe "rejects unsupported options" do
+    test "rejects a chunk_overlap of -1" do
+      opts = [
+        chunk_overlap: -1
+      ]
+
+      result = TextChunker.split("this should fail", opts)
+      assert result == {:error, "invalid value for :chunk_overlap option: expected non negative integer, got: -1"}
+    end
+
+    test "rejects a chunk_size of 0" do
+      opts = [
+        chunk_size: 0
+      ]
+
+      result = TextChunker.split("this should fail", opts)
+      assert result == {:error, "invalid value for :chunk_size option: expected positive integer, got: 0"}
+    end
+
+    test "rejects an unsupported format" do
+      opts = [
+        format: :made_up_format
+      ]
+
+      result = TextChunker.split("this should fail", opts)
+
+      assert result == {
+               :error,
+               "invalid value for :format option: expected one of [:doc, :docx, :epub, :latex, :odt, :pdf, :rtf, :markdown, :plaintext, :elixir, :ruby, :php, :python, :vue, :javascript, :typescript], got: :made_up_format"
+             }
+    end
+
+    test "rejects a strategy that is not currently supported" do
+      opts = [
+        strategy: UnsupportedModule
+      ]
+
+      result = TextChunker.split("this should fail", opts)
+
+      assert result ==
+               {:error,
+                "invalid value for :strategy option: expected one of [TextChunker.Strategies.RecursiveChunk], got: UnsupportedModule"}
+    end
+  end
 end
