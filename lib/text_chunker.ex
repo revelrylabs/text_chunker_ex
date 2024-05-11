@@ -21,20 +21,21 @@ defmodule TextChunker do
   @supported_formats [
     :doc,
     :docx,
+    :elixir,
     :epub,
+    :html,
+    :javascript,
     :latex,
+    :markdown,
     :odt,
     :pdf,
-    :rtf,
-    :markdown,
-    :plaintext,
-    :elixir,
-    :ruby,
     :php,
+    :plaintext,
     :python,
-    :vue,
-    :javascript,
-    :typescript
+    :rtf,
+    :ruby,
+    :typescript,
+    :vue
   ]
 
   @opts_schema [
