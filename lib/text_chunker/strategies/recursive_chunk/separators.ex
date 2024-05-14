@@ -34,20 +34,12 @@ defmodule TextChunker.Strategies.RecursiveChunk.Separators do
       "```\n\n",
       "\n\n___\n\n",
       "\n\n---\n\n",
-      "\n\n***\n\n",
-      "\n\n",
-      "\n",
-      " "
-    ]
+      "\n\n***\n\n"
+    ] ++ empty_and_new_line_separators()
   end
 
   def get_separators(:plaintext) do
-    [
-      "\n\n",
-      "\n",
-      " ",
-      ""
-    ]
+    empty_and_new_line_separators() ++ [""]
   end
 
   def get_separators(:elixir) do
@@ -68,11 +60,8 @@ defmodule TextChunker.Strategies.RecursiveChunk.Separators do
       "  with ",
       "  cond ",
       "  case ",
-      "  if ",
-      "\n\n",
-      "\n",
-      " "
-    ]
+      "  if "
+    ] ++ empty_and_new_line_separators()
   end
 
   def get_separators(:ruby) do
@@ -90,11 +79,8 @@ defmodule TextChunker.Strategies.RecursiveChunk.Separators do
       "  for ",
       "  do ",
       "  begin ",
-      "  rescue ",
-      "\n\n",
-      "\n",
-      " "
-    ]
+      "  rescue "
+    ] ++ empty_and_new_line_separators()
   end
 
   def get_separators(:php) do
@@ -113,22 +99,16 @@ defmodule TextChunker.Strategies.RecursiveChunk.Separators do
       "  while ",
       "  do ",
       "  switch ",
-      "  case ",
-      "\n\n",
-      "\n",
-      " "
-    ]
+      "  case "
+    ] ++ empty_and_new_line_separators()
   end
 
   def get_separators(:python) do
     [
       "\nclass ",
       "\ndef ",
-      "\n\tdef ",
-      "\n\n",
-      "\n",
-      " "
-    ]
+      "\n\tdef "
+    ] ++ empty_and_new_line_separators()
   end
 
   def get_separators(:vue) do
@@ -157,14 +137,38 @@ defmodule TextChunker.Strategies.RecursiveChunk.Separators do
       "  while ",
       "  switch ",
       "  case ",
-      "  default ",
-      "\n\n",
-      "\n",
-      " "
-    ]
+      "  default "
+    ] ++ empty_and_new_line_separators()
+  end
+
+  def get_separators(:html) do
+    [
+      "<h1",
+      "<h2",
+      "<h3",
+      "<h4",
+      "<h5",
+      "<h6",
+      "<p",
+      "<ul",
+      "<ol",
+      "<li",
+      "<article",
+      "<section",
+      "<table"
+    ] ++
+      empty_and_new_line_separators()
   end
 
   def get_separators(:typescript), do: get_separators(:javascript)
 
   def get_separators(format) when format in @plaintext_formats, do: get_separators(:plaintext)
+
+  defp empty_and_new_line_separators do
+    [
+      "\n\n",
+      "\n",
+      " "
+    ]
+  end
 end
