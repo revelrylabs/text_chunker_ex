@@ -1,5 +1,5 @@
 {
-  "version": "0.3.0",
+  "version": "0.3.1",
   "inputs": [
     // This input allows us to prompt the VSCode user for arguments when we run a debug configuration.
     {
