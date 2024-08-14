@@ -247,19 +247,19 @@ defmodule TextChunkerTest do
 
       expected_result =
         [
-          "class PetShop:\n    \"\"\"Represents a pet shop with inventory and sales functionality.\"\"\"",
+          ~s(class PetShop:\n    """Represents a pet shop with inventory and sales functionality."""),
           "\n\n    def __init__(self, name):\n        self.name = name\n        self.inventory = {}",
           "\n\n    def add_pet(self, pet_type, quantity):",
-          "\n        \"\"\"Adds a specified quantity of a pet type to the inventory.\"\"\"",
+          ~s(\n        """Adds a specified quantity of a pet type to the inventory."""),
           "\n        if pet_type in self.inventory:\n            self.inventory[pet_type] += quantity",
           "\n        else:\n            self.inventory[pet_type] = quantity",
           "\n\n    def sell_pet(self, pet_type, quantity):",
-          "\n        \"\"\"Sells a specified quantity of a pet type.\"\"\"",
+          ~s(\n        """Sells a specified quantity of a pet type."""),
           "\n        if pet_type in self.inventory and self.inventory[pet_type] >= quantity:",
           "\n            self.inventory[pet_type] -= quantity\n            return True\n        else:",
           "\n            return False",
           "\n\n    def get_pet_count(self, pet_type):",
-          "\n        \"\"\"Returns the current count of a specific pet type.\"\"\"",
+          ~s(\n        """Returns the current count of a specific pet type."""),
           "\n        return self.inventory.get(pet_type, 0)\n"
         ]
 
@@ -279,20 +279,20 @@ defmodule TextChunkerTest do
 
       expected_result =
         [
-          "class PetShop:\n    \"\"\"Represents a pet shop with inventory and sales functionality.\"\"\"",
+          ~s(class PetShop:\n    """Represents a pet shop with inventory and sales functionality."""),
           "\n\n    def __init__(self, name):\n        self.name = name\n        self.inventory = {}",
           "\n\n    def add_pet(self, pet_type, quantity):",
-          "\n        \"\"\"Adds a specified quantity of a pet type to the inventory.\"\"\"",
+          ~s(\n        """Adds a specified quantity of a pet type to the inventory."""),
           "\n        if pet_type in self.inventory:\n            self.inventory[pet_type] += quantity",
           "\n            self.inventory[pet_type] += quantity\n        else:",
           "\n        else:\n            self.inventory[pet_type] = quantity",
           "\n\n    def sell_pet(self, pet_type, quantity):",
-          "\n    def sell_pet(self, pet_type, quantity):\n        \"\"\"Sells a specified quantity of a pet type.\"\"\"",
+          ~s{\n    def sell_pet(self, pet_type, quantity):\n        """Sells a specified quantity of a pet type."""},
           "\n        if pet_type in self.inventory and self.inventory[pet_type] >= quantity:",
           "\n            self.inventory[pet_type] -= quantity\n            return True\n        else:",
           "\n            return True\n        else:\n            return False",
           "\n\n    def get_pet_count(self, pet_type):",
-          "\n        \"\"\"Returns the current count of a specific pet type.\"\"\"",
+          ~s(\n        """Returns the current count of a specific pet type."""),
           "\n        return self.inventory.get(pet_type, 0)\n"
         ]
 

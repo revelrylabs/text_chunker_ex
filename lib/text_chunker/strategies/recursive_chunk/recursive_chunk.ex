@@ -94,15 +94,17 @@ defmodule TextChunker.Strategies.RecursiveChunk do
         end
       end)
 
-    if chunks != [],
-      do: chunks,
-      else: [
+    if chunks == [] do
+      [
         %Chunk{
           start_byte: 0,
           end_byte: 1,
           text: "incompatible_config_or_text_no_chunks_saved"
         }
       ]
+    else
+      chunks
+    end
   end
 
   defp perform_split(text, separators, chunk_size, chunk_overlap) do
