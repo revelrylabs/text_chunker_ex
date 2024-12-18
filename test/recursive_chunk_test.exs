@@ -191,6 +191,25 @@ defmodule TextChunkerTest do
       assert byte_size(text) == byte_size_of_chunks
     end
 
+    test "splits text into chunks sized according to the get_chunk_size" do
+      {:ok, text} = File.read("test/support/fixtures/document_fixtures/hamlet.txt")
+
+      opts = [
+        chunk_size: 1000,
+        get_chunk_size: fn chunk ->
+          ~r/\w{1,3}/u
+          |> Regex.scan(chunk)
+          |> length()
+        end,
+        chunk_overlap: 0,
+        format: :plaintext
+      ]
+
+      chunk_count = TextChunker.split(text, opts)
+
+      assert length(chunk_count) == 212
+    end
+
     test "splits text into chunks with lengths that match the original file" do
       {:ok, text} = File.read("test/support/fixtures/document_fixtures/hamlet.txt")
 
