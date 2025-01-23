@@ -2,7 +2,8 @@
 
 ## Preparation
 - [ ] Update the package version in `mix.exs`
-- [ ] Update the package version badge and installation instructions in `README.md`
+- [ ] Update the installation instructions in `README.md`
+- [ ] Update SECURITY.md
 
 ## Release Process
 - [ ] Make sure all changes in the `Preparation` section are in `main`
