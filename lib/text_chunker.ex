@@ -64,11 +64,10 @@ defmodule TextChunker do
   iex> long_text = "This is a very long text that needs to be split into smaller pieces for easier handling."
   iex> TextChunker.split(long_text)
   # => [%Chunk{}, %Chunk{}, ...]
-  ```
 
   iex> TextChunker.split(long_text, chunk_size: 10, chunk_overlap: 3)
   # => Generates many smaller chunks with significant overlap
-
+  ```
   """
   @spec split(binary(), keyword()) :: [Chunk.t()] | {:error, String.t()}
   def split(text, opts \\ []) do
