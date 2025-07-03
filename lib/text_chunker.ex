@@ -9,8 +9,9 @@ defmodule TextChunker do
   * **Metadata Tracking:**  Generates `Chunk` structs containing byte range information.
 
   **Supported Options**
-  * `:chunk_size` (positive integer, default: 2000) - Maximum size in code point length for each chunk.
-  * `:chunk_overlap` (non-negative integer, default: 200) - Number of overlapping code points between consecutive chunks to preserve context.
+  * `:chunk_size` (positive integer, default: 2000) - Maximum size in token length for each chunk.
+  * `:get_chunk_size` (function, default: &String.length/1) - A function that returns the number of tokens in a chunk, by default the number of code points.
+  * `:chunk_overlap` (non-negative integer, default: 200) - Number of overlapping tokens between consecutive chunks to preserve context.
   * `:strategy` (module default: `RecursiveChunk`) - A module implementing the split function. Currently only `RecursiveChunk` is supported.
   * `:format` (atom, default: `:plaintext`) - The format of the input text. Used to determine where to split the text in some strategies.
   """
@@ -42,6 +43,7 @@ defmodule TextChunker do
     strategy: [required: true, type: {:in, @supported_strategies}],
     chunk_overlap: [required: true, type: :non_neg_integer],
     chunk_size: [required: true, type: :pos_integer],
+    get_chunk_size: [required: false, type: {:fun, 1}],
     format: [
       required: true,
       type: {:in, @supported_formats}
@@ -51,6 +53,7 @@ defmodule TextChunker do
   @default_opts [
     chunk_size: 2000,
     chunk_overlap: 200,
+    get_chunk_size: &String.length/1,
     strategy: RecursiveChunk,
     format: :plaintext
   ]

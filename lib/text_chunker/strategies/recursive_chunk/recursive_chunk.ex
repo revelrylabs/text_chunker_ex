@@ -68,16 +68,21 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     separators = Separators.get_separators(opts[:format])
     chunk_size = opts[:chunk_size]
     chunk_overlap = opts[:chunk_overlap]
-    split_text = perform_split(text, separators, chunk_size, chunk_overlap)
+    get_chunk_size = opts[:get_chunk_size]
+    split_text = perform_split(text, separators, chunk_size, chunk_overlap, get_chunk_size)
 
     produce_metadata(text, split_text, opts)
   end
 
   def produce_metadata(text, split_text, opts) do
+    get_chunk_size = opts[:get_chunk_size]
+
     chunks =
       Enum.reduce(split_text, [], fn chunk, chunks ->
-        if String.length(chunk) > opts[:chunk_size] do
-          Logger.warning("Chunk size of #{String.length(chunk)} is greater than #{opts[:chunk_size]}. Skipping...")
+        chunk_size = get_chunk_size.(chunk)
+
+        if chunk_size > opts[:chunk_size] do
+          Logger.warning("Chunk size of #{chunk_size} is greater than #{opts[:chunk_size]}. Skipping...")
 
           chunks
         else
@@ -107,7 +112,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     end
   end
 
-  defp perform_split(text, separators, chunk_size, chunk_overlap) do
+  defp perform_split(text, separators, chunk_size, chunk_overlap, get_chunk_size) do
     {current_separator, remaining_separators} = get_active_separator(separators, text)
     ### **Recursive Splitting:**
     {final_chunks, good_splits} =
@@ -115,7 +120,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
       |> split_on_separator(text)
       |> Enum.reduce({[], []}, fn chunk, {final_chunks, good_splits} ->
         cond do
-          chunk_small_enough?(chunk, chunk_size) ->
+          chunk_small_enough?(chunk, chunk_size, get_chunk_size) ->
             {final_chunks, good_splits ++ [chunk]}
 
           Enum.empty?(remaining_separators) ->
@@ -138,7 +143,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
                 chunk_overlap
               )
 
-            more_chunks = perform_split(chunk, remaining_separators, chunk_size, chunk_overlap)
+            more_chunks = perform_split(chunk, remaining_separators, chunk_size, chunk_overlap, get_chunk_size)
             {final_chunks ++ more_chunks, []}
         end
       end)
@@ -184,7 +189,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     end
   end
 
-  defp chunk_small_enough?(chunk, max_chunk_size), do: String.length(chunk) <= max_chunk_size
+  defp chunk_small_enough?(chunk, max_chunk_size, get_chunk_size), do: get_chunk_size.(chunk) <= max_chunk_size
 
   # Collapses the splits based on separators into the correct chunk_size, and adds the overlap
   defp merge_splits(splits, chunk_size, chunk_overlap, current_separator) do
