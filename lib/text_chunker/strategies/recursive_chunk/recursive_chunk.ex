@@ -214,71 +214,75 @@ defmodule TextChunker.Strategies.RecursiveChunk do
 
   # Collapses the splits based on separators into the correct chunk_size, and adds the overlap
   defp merge_splits(splits, chunk_size, chunk_overlap, current_separator) do
-    {final_splits, current_splits, _split_total_length} =
-      Enum.reduce(splits, {[], [], 0}, fn indexed_split, {final_splits, current_splits, splits_total_length} ->
-        # Convert to string for length check
-        split = Enum.map_join(indexed_split, &elem(&1, 0))
-        split_length = String.length(split)
-
-        bigger_than_chunk? =
-          splits_bigger_than_chunk?(
-            split_length,
-            current_splits,
-            splits_total_length,
-            current_separator,
-            chunk_size
-          )
-
-        if bigger_than_chunk? and !Enum.empty?(current_splits) do
-          final_splits_to_add = join_splits(current_splits, current_separator)
-
-          {splits_total_length, current_splits} =
-            reduce_chunk_size(
-              splits_total_length,
-              chunk_overlap,
-              chunk_size,
-              split_length,
-              current_splits
-            )
-
-          {final_splits ++ [final_splits_to_add], current_splits ++ [indexed_split], splits_total_length + split_length}
-        else
-          {final_splits, current_splits ++ [indexed_split], splits_total_length + split_length}
-        end
-      end)
-
-    leftover_splits = join_splits(current_splits, current_separator)
-    final_splits ++ [leftover_splits]
+    splits
+    |> Enum.reduce({[], [], 0}, &accumulate_splits(&1, &2, chunk_size, chunk_overlap, current_separator))
+    |> finish_splits(current_separator)
   end
 
-  # Checks if the combined splits is bigger than the chunk
-  defp splits_bigger_than_chunk?(length, current_splits, splits_total_length, separator, chunk_size) do
-    additional_length = if Enum.count(current_splits) > 0, do: String.length(separator), else: 0
-    length + splits_total_length + additional_length > chunk_size
+  defp accumulate_splits(
+         indexed_split,
+         {final_splits, current_splits, total_length},
+         chunk_size,
+         chunk_overlap,
+         separator
+       ) do
+    split_text = Enum.map_join(indexed_split, &elem(&1, 0))
+    split_length = String.length(split_text)
+
+    # If we have splits and they're too big, finalize current splits
+    if splits_too_big?(split_length, current_splits, total_length, separator, chunk_size) and
+         not Enum.empty?(current_splits) do
+      final_splits_to_add = join_splits(current_splits, separator)
+
+      {splits_total_length, current_splits} =
+        reduce_chunk_size(total_length, chunk_overlap, chunk_size, split_length, current_splits)
+
+      {final_splits ++ [final_splits_to_add], current_splits ++ [indexed_split], splits_total_length + split_length}
+    else
+      # Otherwise accumulate this split
+      {final_splits, current_splits ++ [indexed_split], total_length + split_length}
+    end
+  end
+
+  defp finish_splits({final_splits, current_splits, _total_length}, separator) do
+    case join_splits(current_splits, separator) do
+      nil -> final_splits
+      leftover -> final_splits ++ [leftover]
+    end
+  end
+
+  defp splits_too_big?(length, splits, total_length, separator, chunk_size) do
+    separator_length = if Enum.empty?(splits), do: 0, else: String.length(separator)
+    length + total_length + separator_length > chunk_size
   end
 
   # Using the given separator, joins the indexed splits together
-  defp join_splits(current_splits, separator) do
-    case current_splits do
-      [] ->
-        nil
+  defp join_splits([], _separator), do: nil
 
-      _ ->
-        # Get the last position from the first split and add 1
-        last_pos = current_splits |> List.first() |> List.last() |> elem(1)
-        # Convert separator to indexed form starting after last_pos
-        sep_indexed =
-          separator
-          |> String.to_charlist()
-          |> Enum.with_index(last_pos + 1)
-          |> Enum.map(fn {char, pos} -> {<<char::utf8>>, pos} end)
+  defp join_splits(splits, separator) do
+    # Get the next position after the last char of first split
+    next_pos =
+      splits
+      |> List.first()
+      |> List.last()
+      |> elem(1)
+      |> Kernel.+(1)
 
-        # Concatenate the indexed splits with the separator between them
-        current_splits
-        |> Enum.intersperse(sep_indexed)
-        |> List.flatten()
-    end
+    # Index the separator starting at next_pos
+    separator_chars =
+      separator
+      |> String.to_charlist()
+      |> Enum.with_index(next_pos)
+      |> Enum.map(&index_char/1)
+
+    # Intersperse separator between splits and flatten
+    splits
+    |> Enum.intersperse(separator_chars)
+    |> List.flatten()
   end
+
+  # Convert char and position to our indexed format
+  defp index_char({char, pos}), do: {<<char::utf8>>, pos}
 
   # Recursively reduces the chunk size. The function operates when either
   # a) the current total length of the splits exceeds the chunk overlap - this is where we create the chunk overlap

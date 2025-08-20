@@ -483,22 +483,27 @@ defmodule TextChunkerTest do
   test "splits long text into multiple chunks with overlap" do
     text = String.duplicate("a", 2000)
 
-    # chunk_1024 = %TextChunker.Chunk{
-    #   start_byte: 0,
-    #   end_byte: 1024,
-    #   text: String.duplicate("a", 1024)
-    # }
+    chunk_1024_0 = %TextChunker.Chunk{
+      start_byte: 0,
+      end_byte: 1024,
+      text: String.duplicate("a", 1024)
+    }
 
-    # chunk_152 = %TextChunker.Chunk{
-    #   start_byte: 0,
-    #   end_byte: 152,
-    #   text: String.duplicate("a", 152)
-    # }
+    chunk_1024_1 = %TextChunker.Chunk{
+      start_byte: 924,
+      end_byte: 1948,
+      text: String.duplicate("a", 1024)
+    }
+
+    chunk_152 = %TextChunker.Chunk{
+      start_byte: 1848,
+      end_byte: 2000,
+      text: String.duplicate("a", 152)
+    }
 
     result = TextChunker.split(text, chunk_size: 1024, chunk_overlap: 100, format: :plaintext)
-    IO.inspect(result)
 
-    # assert [chunk_1024, chunk_1024, chunk_152] == result
+    assert [chunk_1024_0, chunk_1024_1, chunk_152] == result
   end
 
   describe "rejects unsupported options" do
