@@ -303,34 +303,20 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   end
 
   defp split_on_separator(separator, indexed_text) do
-    # First convert to string to find separator positions
+    # First get the raw text for splitting
     text = Enum.map_join(indexed_text, &elem(&1, 0))
 
-    # Find all positions of the separator
-    escaped_separator = escape_special_chars(separator)
-    pattern = ~r/(?=#{escaped_separator})/u
+    # Use original regex strategy to get the parts
+    escaped_separator = Regex.escape(separator)
+    parts = Regex.split(~r/(?=#{escaped_separator})/u, text, trim: true)
 
-    # Get all split positions
-    split_positions =
-      pattern
-      |> Regex.scan(text, return: :index)
-      |> Enum.map(fn [{pos, _}] -> pos end)
-      # Add end position
-      |> Enum.concat([String.length(text)])
-
-    # Split the indexed text at those positions
-    split_positions
-    |> Enum.reduce({[], 0}, fn pos, {chunks, last_pos} ->
-      chunk = Enum.slice(indexed_text, last_pos, pos - last_pos)
-      {chunks ++ [chunk], pos}
+    # Keep track of our position as we split
+    {chunks, _} = Enum.map_reduce(parts, 0, fn part, pos ->
+      chunk_length = String.length(part)
+      chunk = Enum.slice(indexed_text, pos, chunk_length)
+      {chunk, pos + chunk_length}
     end)
-    # Get just the chunks
-    |> elem(0)
-    # Remove empty chunks
-    |> Enum.reject(&Enum.empty?/1)
-  end
 
-  defp escape_special_chars(separator) do
-    Regex.replace(~r/([\/\-\\\^\$\*\+\?\.\(\)\|\[\]\{\}])/u, separator, "\\\\\\0")
+    Enum.reject(chunks, &Enum.empty?/1)
   end
 end
