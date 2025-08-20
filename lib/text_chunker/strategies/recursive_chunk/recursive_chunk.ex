@@ -65,20 +65,32 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   ```
   """
   def split(text, opts) do
+    # First, map each character to its position
+    indexed_text =
+      text
+      |> String.to_charlist()
+      |> Enum.with_index()
+      |> Enum.map(fn {char, pos} -> {<<char::utf8>>, pos} end)
+
+    # Get options
     separators = Separators.get_separators(opts[:format])
     chunk_size = opts[:chunk_size]
     chunk_overlap = opts[:chunk_overlap]
     get_chunk_size = opts[:get_chunk_size]
-    split_text = perform_split(text, separators, chunk_size, chunk_overlap, get_chunk_size)
+
+    # Now split the indexed text instead of raw text
+    split_text = perform_split(indexed_text, separators, chunk_size, chunk_overlap, get_chunk_size)
 
     produce_metadata(text, split_text, opts)
   end
 
-  def produce_metadata(text, split_text, opts) do
+  def produce_metadata(_text, split_text, opts) do
     get_chunk_size = opts[:get_chunk_size]
 
     chunks =
-      Enum.reduce(split_text, [], fn chunk, chunks ->
+      Enum.reduce(split_text, [], fn indexed_chunk, chunks ->
+        # Convert to string for size check
+        chunk = Enum.map_join(indexed_chunk, &elem(&1, 0))
         chunk_size = get_chunk_size.(chunk)
 
         if chunk_size > opts[:chunk_size] do
@@ -86,12 +98,14 @@ defmodule TextChunker.Strategies.RecursiveChunk do
 
           chunks
         else
-          chunk_byte_from = get_chunk_byte_start(text, chunk)
-          chunk_byte_to = chunk_byte_from + byte_size(chunk)
+          # Get first and last positions
+          [{_, first_pos} | _] = indexed_chunk
+          {_, last_pos} = List.last(indexed_chunk)
 
           chunk = %Chunk{
-            start_byte: chunk_byte_from,
-            end_byte: chunk_byte_to,
+            start_byte: first_pos,
+            # +1 because end is exclusive
+            end_byte: last_pos + 1,
             text: chunk
           }
 
@@ -179,22 +193,31 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   # The list ["\n\n", "\n" ," "].
   # If the text has "\n\n", then that will be the separator, and it drops that from the list
   # If the text does't have it, then it goes to "\n" and so forth
-  defp get_active_separator(all_separators, text) do
+  defp get_active_separator(all_separators, indexed_text) do
     [active_separator | rest] = all_separators
+
+    # Convert indexed text back to string for checking
+    text = Enum.map_join(indexed_text, &elem(&1, 0))
 
     if String.contains?(text, active_separator) do
       {active_separator, rest}
     else
-      get_active_separator(rest, text)
+      get_active_separator(rest, indexed_text)
     end
   end
 
-  defp chunk_small_enough?(chunk, max_chunk_size, get_chunk_size), do: get_chunk_size.(chunk) <= max_chunk_size
+  defp chunk_small_enough?(indexed_chunk, max_chunk_size, get_chunk_size) do
+    # Convert indexed chunk to string for size check
+    chunk = Enum.map_join(indexed_chunk, &elem(&1, 0))
+    get_chunk_size.(chunk) <= max_chunk_size
+  end
 
   # Collapses the splits based on separators into the correct chunk_size, and adds the overlap
   defp merge_splits(splits, chunk_size, chunk_overlap, current_separator) do
     {final_splits, current_splits, _split_total_length} =
-      Enum.reduce(splits, {[], [], 0}, fn split, {final_splits, current_splits, splits_total_length} ->
+      Enum.reduce(splits, {[], [], 0}, fn indexed_split, {final_splits, current_splits, splits_total_length} ->
+        # Convert to string for length check
+        split = Enum.map_join(indexed_split, &elem(&1, 0))
         split_length = String.length(split)
 
         bigger_than_chunk? =
@@ -218,9 +241,9 @@ defmodule TextChunker.Strategies.RecursiveChunk do
               current_splits
             )
 
-          {final_splits ++ [final_splits_to_add], current_splits ++ [split], splits_total_length + split_length}
+          {final_splits ++ [final_splits_to_add], current_splits ++ [indexed_split], splits_total_length + split_length}
         else
-          {final_splits, current_splits ++ [split], splits_total_length + split_length}
+          {final_splits, current_splits ++ [indexed_split], splits_total_length + split_length}
         end
       end)
 
@@ -234,10 +257,27 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     length + splits_total_length + additional_length > chunk_size
   end
 
-  # Using the given separator, joins the strings in the array current_splits together
+  # Using the given separator, joins the indexed splits together
   defp join_splits(current_splits, separator) do
-    result = Enum.join(current_splits, separator)
-    if String.equivalent?(result, ""), do: nil, else: result
+    case current_splits do
+      [] ->
+        nil
+
+      _ ->
+        # Get the last position from the first split and add 1
+        last_pos = current_splits |> List.first() |> List.last() |> elem(1)
+        # Convert separator to indexed form starting after last_pos
+        sep_indexed =
+          separator
+          |> String.to_charlist()
+          |> Enum.with_index(last_pos + 1)
+          |> Enum.map(fn {char, pos} -> {<<char::utf8>>, pos} end)
+
+        # Concatenate the indexed splits with the separator between them
+        current_splits
+        |> Enum.intersperse(sep_indexed)
+        |> List.flatten()
+    end
   end
 
   # Recursively reduces the chunk size. The function operates when either
@@ -246,7 +286,9 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   defp reduce_chunk_size(splits_total_length, chunk_overlap, chunk_size, split_length, current_splits)
        when splits_total_length > chunk_overlap or
               (splits_total_length + split_length > chunk_size and splits_total_length > 0) do
-    new_total = splits_total_length - String.length(Enum.at(current_splits, 0))
+    # Convert first split to string to get its length
+    first_split = current_splits |> Enum.at(0) |> Enum.map_join(&elem(&1, 0))
+    new_total = splits_total_length - String.length(first_split)
     [_head | rest] = current_splits
     reduce_chunk_size(new_total, chunk_overlap, chunk_size, split_length, rest)
   end
@@ -256,19 +298,35 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     {splits_total_length, current_splits}
   end
 
-  defp split_on_separator(separator, text) do
+  defp split_on_separator(separator, indexed_text) do
+    # First convert to string to find separator positions
+    text = Enum.map_join(indexed_text, &elem(&1, 0))
+
+    # Find all positions of the separator
     escaped_separator = escape_special_chars(separator)
-    Regex.split(~r/(?=#{escaped_separator})/u, text, trim: true)
+    pattern = ~r/(?=#{escaped_separator})/u
+
+    # Get all split positions
+    split_positions =
+      pattern
+      |> Regex.scan(text, return: :index)
+      |> Enum.map(fn [{pos, _}] -> pos end)
+      # Add end position
+      |> Enum.concat([String.length(text)])
+
+    # Split the indexed text at those positions
+    split_positions
+    |> Enum.reduce({[], 0}, fn pos, {chunks, last_pos} ->
+      chunk = Enum.slice(indexed_text, last_pos, pos - last_pos)
+      {chunks ++ [chunk], pos}
+    end)
+    # Get just the chunks
+    |> elem(0)
+    # Remove empty chunks
+    |> Enum.reject(&Enum.empty?/1)
   end
 
   defp escape_special_chars(separator) do
     Regex.replace(~r/([\/\-\\\^\$\*\+\?\.\(\)\|\[\]\{\}])/u, separator, "\\\\\\0")
-  end
-
-  defp get_chunk_byte_start(text, chunk) do
-    case String.split(text, chunk, parts: 2) do
-      [left, _] -> byte_size(left)
-      [_] -> nil
-    end
   end
 end
