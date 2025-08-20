@@ -311,11 +311,12 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     parts = Regex.split(~r/(?=#{escaped_separator})/u, text, trim: true)
 
     # Keep track of our position as we split
-    {chunks, _} = Enum.map_reduce(parts, 0, fn part, pos ->
-      chunk_length = String.length(part)
-      chunk = Enum.slice(indexed_text, pos, chunk_length)
-      {chunk, pos + chunk_length}
-    end)
+    {chunks, _} =
+      Enum.map_reduce(parts, 0, fn part, pos ->
+        chunk_length = String.length(part)
+        chunk = Enum.slice(indexed_text, pos, chunk_length)
+        {chunk, pos + chunk_length}
+      end)
 
     Enum.reject(chunks, &Enum.empty?/1)
   end

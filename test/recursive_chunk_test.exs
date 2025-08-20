@@ -506,6 +506,55 @@ defmodule TextChunkerTest do
     assert [chunk_1024_0, chunk_1024_1, chunk_152] == result
   end
 
+  test "handles complex text with multiple separators and repetition" do
+    opts = [
+      chunk_size: 50,
+      chunk_overlap: 10,
+      format: :plaintext
+    ]
+
+    text = """
+    First paragraph with some text.
+    Second paragraph, also with text.
+
+    Third paragraph...
+    Has multiple
+    line breaks.
+
+    Fourth paragraph repeats: text text text.
+    Still in fourth: text text text.
+
+    Last paragraph ends     with lots   of    spaces   .
+    """
+
+    chunks = TextChunker.split(text, opts)
+    text_result = TestHelpers.extract_text_from_chunks(chunks)
+
+    expected_result = [
+      "First paragraph with some text.",
+      "\nSecond paragraph, also with text.",
+      "\n\nThird paragraph...\nHas multiple\nline breaks.",
+      "\n\nFourth paragraph repeats: text text text.",
+      "\nStill in fourth: text text text.",
+      "\n",
+      "\nLast paragraph ends     with lots   of    spaces ",
+      "   spaces   .",
+      "\n"
+    ]
+
+    assert text_result == expected_result
+
+    chunks
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.each(fn [chunk1, chunk2] ->
+      overlap = chunk1.end_byte - chunk2.start_byte
+      assert overlap >= 0 and overlap <= opts[:chunk_overlap]
+    end)
+
+    last_chunk = List.last(chunks)
+    assert last_chunk.end_byte == String.length(text)
+  end
+
   describe "rejects unsupported options" do
     test "rejects a chunk_overlap of -1" do
       opts = [
