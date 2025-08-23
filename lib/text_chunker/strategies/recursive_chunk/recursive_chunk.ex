@@ -31,6 +31,9 @@ defmodule TextChunker.Strategies.RecursiveChunk do
 
   require Logger
 
+  # Pre-compiled regexes for performance
+  @escape_regex ~r/([\/\-\\\^\$\*\+\?\.\(\)\|\[\]\{\}])/u
+
   @impl true
   @spec split(binary(), keyword()) :: [Chunk.t()]
   @doc """
@@ -281,8 +284,20 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   end
 
   defp split_on_separator(separator, text) do
-    escaped_separator = escape_special_chars(separator)
-    Regex.split(~r/(?=#{escaped_separator})/u, text, trim: true)
+    regex = get_cached_split_regex(separator)
+    Regex.split(regex, text, trim: true)
+  end
+
+  defp get_cached_split_regex(separator) do
+    case Process.get({:split_regex, separator}) do
+      nil ->
+        escaped_separator = escape_special_chars(separator)
+        regex = Regex.compile!("(?=#{escaped_separator})", [:unicode])
+        Process.put({:split_regex, separator}, regex)
+        regex
+      regex ->
+        regex
+    end
   end
 
   defp get_splits_with_positions(text, separator, byte_offset) do
@@ -292,14 +307,14 @@ defmodule TextChunker.Strategies.RecursiveChunk do
       Enum.reduce(splits, {[], byte_offset}, fn split, {acc, current_offset} ->
         split_with_pos = {split, current_offset}
         next_offset = current_offset + byte_size(split)
-        {acc ++ [split_with_pos], next_offset}
+        {[split_with_pos | acc], next_offset}
       end)
 
-    splits_with_positions
+    Enum.reverse(splits_with_positions)
   end
 
   defp escape_special_chars(separator) do
-    Regex.replace(~r/([\/\-\\\^\$\*\+\?\.\(\)\|\[\]\{\}])/u, separator, "\\\\\\0")
+    Regex.replace(@escape_regex, separator, "\\\\\\0")
   end
 
 
