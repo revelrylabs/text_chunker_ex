@@ -666,4 +666,16 @@ defmodule TextChunkerTest do
       end
     end
   end
+
+  describe "error handling" do
+    test "returns error chunk for empty text" do
+      chunks = TextChunker.split("", chunk_size: 100, chunk_overlap: 0, format: :plaintext)
+
+      assert length(chunks) == 1
+      chunk = List.first(chunks)
+      assert chunk.start_byte == 0
+      assert chunk.end_byte == 0
+      assert String.contains?(chunk.text, "No chunks created")
+    end
+  end
 end
