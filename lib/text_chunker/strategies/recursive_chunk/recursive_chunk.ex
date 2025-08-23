@@ -74,29 +74,20 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     get_chunk_size = opts[:get_chunk_size]
     split_text = perform_split(text, separators, chunk_size, chunk_overlap, get_chunk_size, 0)
 
-    produce_metadata(split_text, opts)
+    filter_chunks(split_text, opts)
   end
 
-  def produce_metadata(split_text, opts) do
+  defp filter_chunks(chunk_list, opts) do
     get_chunk_size = opts[:get_chunk_size]
 
     chunks =
-      Enum.reduce(split_text, [], fn {chunk_text, chunk_byte_from}, chunks ->
-        chunk_size = get_chunk_size.(chunk_text)
+      Enum.reduce(chunk_list, [], fn chunk, chunks ->
+        chunk_size = get_chunk_size.(chunk.text)
 
         if chunk_size > opts[:chunk_size] do
           Logger.warning("Chunk size of #{chunk_size} is greater than #{opts[:chunk_size]}. Skipping...")
-
           chunks
         else
-          chunk_byte_to = chunk_byte_from + byte_size(chunk_text)
-
-          chunk = %Chunk{
-            start_byte: chunk_byte_from,
-            end_byte: chunk_byte_to,
-            text: chunk_text
-          }
-
           chunks ++ [chunk]
         end
       end)
@@ -120,10 +111,10 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     splits_with_positions = get_splits_with_positions(text, current_separator, byte_offset)
 
     {final_chunks, good_splits} =
-      Enum.reduce(splits_with_positions, {[], []}, fn {chunk, chunk_byte_offset}, {final_chunks, good_splits} ->
+      Enum.reduce(splits_with_positions, {[], []}, fn chunk, {final_chunks, good_splits} ->
         cond do
-          chunk_small_enough?(chunk, chunk_size, get_chunk_size) ->
-            {final_chunks, good_splits ++ [{chunk, chunk_byte_offset}]}
+          chunk_small_enough?(chunk.text, chunk_size, get_chunk_size) ->
+            {final_chunks, good_splits ++ [chunk]}
 
           Enum.empty?(remaining_separators) ->
             final_chunks =
@@ -134,7 +125,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
                 chunk_overlap
               )
 
-            {final_chunks ++ [{chunk, chunk_byte_offset}], []}
+            {final_chunks ++ [chunk], []}
 
           true ->
             final_chunks =
@@ -146,7 +137,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
               )
 
             more_chunks =
-              perform_split(chunk, remaining_separators, chunk_size, chunk_overlap, get_chunk_size, chunk_byte_offset)
+              perform_split(chunk.text, remaining_separators, chunk_size, chunk_overlap, get_chunk_size, chunk.start_byte)
 
             {final_chunks ++ more_chunks, []}
         end
@@ -195,17 +186,17 @@ defmodule TextChunker.Strategies.RecursiveChunk do
 
   defp chunk_small_enough?(chunk, max_chunk_size, get_chunk_size), do: get_chunk_size.(chunk) <= max_chunk_size
 
-  # New version that handles position tuples
-  defp merge_splits_with_positions(splits_with_positions, chunk_size, chunk_overlap, current_separator) do
+  # Version that handles Chunk structs directly
+  defp merge_splits_with_positions(chunk_splits, chunk_size, chunk_overlap, current_separator) do
     {final_chunks, current_splits, _splits_total_length} =
-      Enum.reduce(splits_with_positions, {[], [], 0}, fn {split, split_pos},
-                                                         {final_chunks, current_splits, splits_total_length} ->
-        split_length = String.length(split)
+      Enum.reduce(chunk_splits, {[], [], 0}, fn split_chunk,
+                                                {final_chunks, current_splits, splits_total_length} ->
+        split_length = String.length(split_chunk.text)
 
         bigger_than_chunk? =
           splits_bigger_than_chunk?(
             split_length,
-            Enum.map(current_splits, fn {text, _pos} -> text end),
+            Enum.map(current_splits, fn chunk -> chunk.text end),
             splits_total_length,
             current_separator,
             chunk_size
@@ -213,12 +204,12 @@ defmodule TextChunker.Strategies.RecursiveChunk do
 
         if bigger_than_chunk? and !Enum.empty?(current_splits) do
           # Create chunk from current_splits
-          chunk_text = join_splits(Enum.map(current_splits, fn {text, _pos} -> text end), current_separator)
+          chunk_text = join_splits(Enum.map(current_splits, fn chunk -> chunk.text end), current_separator)
 
           chunk_start_pos =
             case current_splits do
-              [{_text, pos} | _] -> pos
-              [] -> split_pos
+              [first_chunk | _] -> first_chunk.start_byte
+              [] -> split_chunk.start_byte
             end
 
           # Calculate overlap for next chunk
@@ -231,13 +222,17 @@ defmodule TextChunker.Strategies.RecursiveChunk do
               current_splits
             )
 
-          final_chunk = {chunk_text, chunk_start_pos}
-          new_current_splits = current_splits ++ [{split, split_pos}]
+          final_chunk = %Chunk{
+            start_byte: chunk_start_pos,
+            end_byte: chunk_start_pos + byte_size(chunk_text),
+            text: chunk_text
+          }
+          new_current_splits = current_splits ++ [split_chunk]
           new_total_length = splits_total_length + split_length
 
           {final_chunks ++ [final_chunk], new_current_splits, new_total_length}
         else
-          {final_chunks, current_splits ++ [{split, split_pos}], splits_total_length + split_length}
+          {final_chunks, current_splits ++ [split_chunk], splits_total_length + split_length}
         end
       end)
 
@@ -248,15 +243,19 @@ defmodule TextChunker.Strategies.RecursiveChunk do
           nil
 
         _ ->
-          chunk_text = join_splits(Enum.map(current_splits, fn {text, _pos} -> text end), current_separator)
+          chunk_text = join_splits(Enum.map(current_splits, fn chunk -> chunk.text end), current_separator)
 
           chunk_start_pos =
             case current_splits do
-              [{_text, pos} | _] -> pos
+              [first_chunk | _] -> first_chunk.start_byte
               [] -> 0
             end
 
-          {chunk_text, chunk_start_pos}
+          %Chunk{
+            start_byte: chunk_start_pos,
+            end_byte: chunk_start_pos + byte_size(chunk_text),
+            text: chunk_text
+          }
       end
 
     case leftover_chunk do
@@ -282,8 +281,8 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   defp reduce_chunk_size_with_positions(splits_total_length, chunk_overlap, chunk_size, split_length, current_splits)
        when splits_total_length > chunk_overlap or
               (splits_total_length + split_length > chunk_size and splits_total_length > 0) do
-    [{first_text, _first_pos} | rest] = current_splits
-    new_total = splits_total_length - String.length(first_text)
+    [first_chunk | rest] = current_splits
+    new_total = splits_total_length - String.length(first_chunk.text)
     reduce_chunk_size_with_positions(new_total, chunk_overlap, chunk_size, split_length, rest)
   end
 
@@ -293,11 +292,11 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   end
 
   defp split_on_separator(separator, text) do
-    regex = get_cached_split_regex(separator)
+    regex = get_split_regex(separator)
     Regex.split(regex, text, trim: true)
   end
 
-  defp get_cached_split_regex(separator) do
+  defp get_split_regex(separator) do
     case Process.get({:split_regex, separator}) do
       nil ->
         escaped_separator = escape_special_chars(separator)
@@ -313,14 +312,18 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   defp get_splits_with_positions(text, separator, byte_offset) do
     splits = split_on_separator(separator, text)
 
-    {splits_with_positions, _} =
+    {chunk_splits, _} =
       Enum.reduce(splits, {[], byte_offset}, fn split, {acc, current_offset} ->
-        split_with_pos = {split, current_offset}
+        chunk = %Chunk{
+          start_byte: current_offset,
+          end_byte: current_offset + byte_size(split),
+          text: split
+        }
         next_offset = current_offset + byte_size(split)
-        {[split_with_pos | acc], next_offset}
+        {[chunk | acc], next_offset}
       end)
 
-    Enum.reverse(splits_with_positions)
+    Enum.reverse(chunk_splits)
   end
 
   defp escape_special_chars(separator) do
