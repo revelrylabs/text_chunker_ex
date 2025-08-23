@@ -524,4 +524,32 @@ defmodule TextChunkerTest do
                 "invalid value for :strategy option: expected one of [TextChunker.Strategies.RecursiveChunk], got: UnsupportedModule"}
     end
   end
+
+  describe "metadata tracking" do
+    test "splits long text into multiple chunks with overlap" do
+      text = String.duplicate("a", 100)
+
+      chunk_1 = %TextChunker.Chunk{
+        start_byte: 0,
+        end_byte: 50,
+        text: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+
+      chunk_2 = %TextChunker.Chunk{
+        start_byte: 35,
+        end_byte: 85,
+        text: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+
+      chunk_3 = %TextChunker.Chunk{
+        start_byte: 70,
+        end_byte: 100,
+        text: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+
+      result = TextChunker.split(text, chunk_size: 50, chunk_overlap: 15, format: :plaintext)
+
+      assert [chunk_1, chunk_2, chunk_3] == result
+    end
+  end
 end
