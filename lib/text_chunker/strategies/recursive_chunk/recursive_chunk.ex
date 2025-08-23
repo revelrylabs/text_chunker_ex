@@ -31,7 +31,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
 
   require Logger
 
-  # Pre-compiled regexes for performance
+  # Pre-compiled regexes - this should prevent regex compilation on every split
   @escape_regex ~r/([\/\-\\\^\$\*\+\?\.\(\)\|\[\]\{\}])/u
 
   @impl true
@@ -72,37 +72,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     chunk_size = opts[:chunk_size]
     chunk_overlap = opts[:chunk_overlap]
     get_chunk_size = opts[:get_chunk_size]
-    split_text = perform_split(text, separators, chunk_size, chunk_overlap, get_chunk_size, 0)
-
-    filter_chunks(split_text, opts)
-  end
-
-  defp filter_chunks(chunk_list, opts) do
-    get_chunk_size = opts[:get_chunk_size]
-
-    chunks =
-      Enum.reduce(chunk_list, [], fn chunk, chunks ->
-        chunk_size = get_chunk_size.(chunk.text)
-
-        if chunk_size > opts[:chunk_size] do
-          Logger.warning("Chunk size of #{chunk_size} is greater than #{opts[:chunk_size]}. Skipping...")
-          chunks
-        else
-          chunks ++ [chunk]
-        end
-      end)
-
-    if chunks == [] do
-      [
-        %Chunk{
-          start_byte: 0,
-          end_byte: 1,
-          text: "incompatible_config_or_text_no_chunks_saved"
-        }
-      ]
-    else
-      chunks
-    end
+    perform_split(text, separators, chunk_size, chunk_overlap, get_chunk_size, 0)
   end
 
   defp perform_split(text, separators, chunk_size, chunk_overlap, get_chunk_size, byte_offset) do
@@ -297,6 +267,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   end
 
   defp get_split_regex(separator) do
+    # Regex caching using a process dictionary
     case Process.get({:split_regex, separator}) do
       nil ->
         escaped_separator = escape_special_chars(separator)
