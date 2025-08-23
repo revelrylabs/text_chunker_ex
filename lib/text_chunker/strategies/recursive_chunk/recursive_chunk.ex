@@ -145,7 +145,9 @@ defmodule TextChunker.Strategies.RecursiveChunk do
                 chunk_overlap
               )
 
-            more_chunks = perform_split(chunk, remaining_separators, chunk_size, chunk_overlap, get_chunk_size, chunk_byte_offset)
+            more_chunks =
+              perform_split(chunk, remaining_separators, chunk_size, chunk_overlap, get_chunk_size, chunk_byte_offset)
+
             {final_chunks ++ more_chunks, []}
         end
       end)
@@ -196,7 +198,8 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   # New version that handles position tuples
   defp merge_splits_with_positions(splits_with_positions, chunk_size, chunk_overlap, current_separator) do
     {final_chunks, current_splits, _splits_total_length} =
-      Enum.reduce(splits_with_positions, {[], [], 0}, fn {split, split_pos}, {final_chunks, current_splits, splits_total_length} ->
+      Enum.reduce(splits_with_positions, {[], [], 0}, fn {split, split_pos},
+                                                         {final_chunks, current_splits, splits_total_length} ->
         split_length = String.length(split)
 
         bigger_than_chunk? =
@@ -211,10 +214,12 @@ defmodule TextChunker.Strategies.RecursiveChunk do
         if bigger_than_chunk? and !Enum.empty?(current_splits) do
           # Create chunk from current_splits
           chunk_text = join_splits(Enum.map(current_splits, fn {text, _pos} -> text end), current_separator)
-          chunk_start_pos = case current_splits do
-            [{_text, pos} | _] -> pos
-            [] -> split_pos
-          end
+
+          chunk_start_pos =
+            case current_splits do
+              [{_text, pos} | _] -> pos
+              [] -> split_pos
+            end
 
           # Calculate overlap for next chunk
           {splits_total_length, current_splits} =
@@ -237,24 +242,28 @@ defmodule TextChunker.Strategies.RecursiveChunk do
       end)
 
     # Handle leftover splits
-    leftover_chunk = case current_splits do
-      [] -> nil
-      _ ->
-        chunk_text = join_splits(Enum.map(current_splits, fn {text, _pos} -> text end), current_separator)
-        chunk_start_pos = case current_splits do
-          [{_text, pos} | _] -> pos
-          [] -> 0
-        end
-        {chunk_text, chunk_start_pos}
-    end
+    leftover_chunk =
+      case current_splits do
+        [] ->
+          nil
+
+        _ ->
+          chunk_text = join_splits(Enum.map(current_splits, fn {text, _pos} -> text end), current_separator)
+
+          chunk_start_pos =
+            case current_splits do
+              [{_text, pos} | _] -> pos
+              [] -> 0
+            end
+
+          {chunk_text, chunk_start_pos}
+      end
 
     case leftover_chunk do
       nil -> final_chunks
       chunk -> final_chunks ++ [chunk]
     end
   end
-
-
 
   # Checks if the combined splits is bigger than the chunk
   defp splits_bigger_than_chunk?(length, current_splits, splits_total_length, separator, chunk_size) do
@@ -295,6 +304,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
         regex = Regex.compile!("(?=#{escaped_separator})", [:unicode])
         Process.put({:split_regex, separator}, regex)
         regex
+
       regex ->
         regex
     end
@@ -316,6 +326,4 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   defp escape_special_chars(separator) do
     Regex.replace(@escape_regex, separator, "\\\\\\0")
   end
-
-
 end
