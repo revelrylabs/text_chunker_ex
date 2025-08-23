@@ -189,8 +189,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   # Version that handles Chunk structs directly
   defp merge_splits_with_positions(chunk_splits, chunk_size, chunk_overlap, current_separator) do
     {final_chunks, current_splits, _splits_total_length} =
-      Enum.reduce(chunk_splits, {[], [], 0}, fn split_chunk,
-                                                {final_chunks, current_splits, splits_total_length} ->
+      Enum.reduce(chunk_splits, {[], [], 0}, fn split_chunk, {final_chunks, current_splits, splits_total_length} ->
         split_length = String.length(split_chunk.text)
 
         bigger_than_chunk? =
@@ -227,6 +226,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
             end_byte: chunk_start_pos + byte_size(chunk_text),
             text: chunk_text
           }
+
           new_current_splits = current_splits ++ [split_chunk]
           new_total_length = splits_total_length + split_length
 
@@ -319,6 +319,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
           end_byte: current_offset + byte_size(split),
           text: split
         }
+
         next_offset = current_offset + byte_size(split)
         {[chunk | acc], next_offset}
       end)
