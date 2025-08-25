@@ -31,9 +31,6 @@ defmodule TextChunker.Strategies.RecursiveChunk do
 
   require Logger
 
-  # Pre-compiled regexes - this should prevent regex compilation on every split
-  @escape_regex ~r/([\/\-\\\^\$\*\+\?\.\(\)\|\[\]\{\}])/u
-
   @impl true
   @spec split(binary(), keyword()) :: [Chunk.t()]
   @doc """
@@ -276,22 +273,9 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   end
 
   defp split_on_separator(separator, text) do
-    regex = get_split_regex(separator)
+    escaped_separator = Regex.escape(separator)
+    regex = Regex.compile!("(?=#{escaped_separator})", [:unicode])
     Regex.split(regex, text, trim: true)
-  end
-
-  defp get_split_regex(separator) do
-    # Regex caching using a process dictionary
-    case Process.get({:split_regex, separator}) do
-      nil ->
-        escaped_separator = escape_special_chars(separator)
-        regex = Regex.compile!("(?=#{escaped_separator})", [:unicode])
-        Process.put({:split_regex, separator}, regex)
-        regex
-
-      regex ->
-        regex
-    end
   end
 
   defp get_splits_with_positions(text, separator, byte_offset) do
@@ -310,9 +294,5 @@ defmodule TextChunker.Strategies.RecursiveChunk do
       end)
 
     Enum.reverse(chunk_splits)
-  end
-
-  defp escape_special_chars(separator) do
-    Regex.replace(@escape_regex, separator, "\\\\\\0")
   end
 end
