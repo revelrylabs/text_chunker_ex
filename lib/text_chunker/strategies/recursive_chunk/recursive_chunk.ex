@@ -9,7 +9,6 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   * **Context Preservation:** Maintains `chunk_overlap` to minimize information loss at chunk boundaries.
   * **Separator Handling:** Selects the most appropriate delimiter (e.g., line breaks, spaces) based on the text content.
   * **Metadata Generation:** Creates `%TextChunker.Chunk{}` structs containing the split text and its original byte range.
-  * **Oversized Chunk Warnings:**  Provides feedback when chunks cannot be created due to misconfiguration or limitations of the input text.
 
   **Algorithm Overview**
 
@@ -34,35 +33,17 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   @impl true
   @spec split(binary(), keyword()) :: [Chunk.t()]
   @doc """
-  Splits the given text into chunks using a recursive strategy. Prioritizes compliance
-  with  the configured `chunk_size` as a maximum, while aiming to maintain `chunk_overlap` for
-  context preservation.  Intelligently handles various separators for flexible splitting.
+  Internal recursive chunking strategy. Use `TextChunker.split/2` for public API.
+
+  Splits text using prioritized separators, respecting `chunk_size` limits while
+  maintaining `chunk_overlap` for context preservation.
 
   ## Options
 
-  * `:chunk_size` (integer) - Target size in bytes for each chunk.
-  * `:chunk_overlap` (integer) - Number of overlapping bytes between chunks.
-  * `:format` (atom) -  The format of the input text (influences separator selection).
-
-  ## Examples
-
-  ```elixir
-  iex> long_text = "This is a very long text that needs to be split into smaller pieces for easier handling."
-
-  iex> TextChunker.Strategies.RecursiveChunk.split(long_text, chunk_size: 15, chunk_overlap: 5)
-  [
-    %TextChunker.Chunk{
-      start_byte: 0,
-      end_byte: 47,
-      text: "This is a very long text that needs to be split"
-    },
-    %TextChunker.Chunk{
-      start_byte: 38,
-      end_byte: 88,
-      text: " be split into smaller pieces for easier handling."
-    }
-  ]
-  ```
+  * `:chunk_size` (integer) - Maximum chunk size
+  * `:chunk_overlap` (integer) - Overlap between chunks
+  * `:format` (atom) - Text format for separator selection
+  * `:get_chunk_size` (function) - Size calculation function (required)
   """
   def split(text, opts) do
     separators = Separators.get_separators(opts[:format])
@@ -143,18 +124,13 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     end
   end
 
-  # Fallback to an empty string as separator. This means it's one gigantic line of nothingness
-  # with no separators. It will get ignored inside TextChunker.split/2. The separator we
-  # pass back is meaningless (unless it's "" in which case we will get chunks
-  # but it might be very slow.)
+  # Fallback when no separators match - use space as final separator
   defp get_active_separator([], _text) do
     {" ", []}
   end
 
-  # Gets the separator to be used on this round of iteration. For example:
-  # The list ["\n\n", "\n" ," "].
-  # If the text has "\n\n", then that will be the separator, and it drops that from the list
-  # If the text does't have it, then it goes to "\n" and so forth
+  # Returns the first separator found in text, removing it from the list.
+  # Example: ["\n\n", "\n", " "] -> if text contains "\n\n", returns {"\n\n", ["\n", " "]}
   defp get_active_separator(all_separators, text) do
     [active_separator | rest] = all_separators
 
@@ -167,7 +143,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
 
   defp chunk_small_enough?(chunk, max_chunk_size, get_chunk_size), do: get_chunk_size.(chunk) <= max_chunk_size
 
-  # Version that handles Chunk structs directly
+  # Collapses the splits based on separators into the correct chunk_size, and adds the overlap
   defp merge_splits_with_positions(chunk_splits, chunk_size, chunk_overlap, current_separator) do
     {final_chunks, current_splits, _splits_total_length} =
       Enum.reduce(chunk_splits, {[], [], 0}, fn split_chunk, {final_chunks, current_splits, splits_total_length} ->
