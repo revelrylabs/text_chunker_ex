@@ -50,7 +50,8 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     chunk_size = opts[:chunk_size]
     chunk_overlap = opts[:chunk_overlap]
     get_chunk_size = opts[:get_chunk_size]
-    chunks = perform_split(text, separators, chunk_size, chunk_overlap, get_chunk_size, 0)
+    initial_chunk = %Chunk{text: text, start_byte: 0, end_byte: byte_size(text)}
+    chunks = perform_split(initial_chunk, separators, chunk_size, chunk_overlap, get_chunk_size)
 
     case chunks do
       [] ->
@@ -67,10 +68,10 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     end
   end
 
-  defp perform_split(text, separators, chunk_size, chunk_overlap, get_chunk_size, byte_offset) do
-    {current_separator, remaining_separators} = get_active_separator(separators, text)
+  defp perform_split(%Chunk{} = chunk, separators, chunk_size, chunk_overlap, get_chunk_size) do
+    {current_separator, remaining_separators} = get_active_separator(separators, chunk)
     ### **Recursive Splitting:**
-    splits_with_positions = get_splits_with_positions(text, current_separator, byte_offset)
+    splits_with_positions = get_splits_with_positions(chunk, current_separator)
 
     {final_chunks, good_splits} =
       Enum.reduce(splits_with_positions, {[], []}, fn chunk, {final_chunks, good_splits} ->
@@ -99,7 +100,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
               )
 
             more_chunks =
-              perform_split(chunk.text, remaining_separators, chunk_size, chunk_overlap, get_chunk_size, chunk.start_byte)
+              perform_split(chunk, remaining_separators, chunk_size, chunk_overlap, get_chunk_size)
 
             {final_chunks ++ more_chunks, []}
         end
@@ -125,19 +126,19 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   end
 
   # Fallback when no separators match - use space as final separator
-  defp get_active_separator([], _text) do
+  defp get_active_separator([], _chunk) do
     {" ", []}
   end
 
   # Returns the first separator found in text, removing it from the list.
   # Example: ["\n\n", "\n", " "] -> if text contains "\n\n", returns {"\n\n", ["\n", " "]}
-  defp get_active_separator(all_separators, text) do
+  defp get_active_separator(all_separators, %Chunk{text: text} = chunk) do
     [active_separator | rest] = all_separators
 
     if String.contains?(text, active_separator) do
       {active_separator, rest}
     else
-      get_active_separator(rest, text)
+      get_active_separator(rest, chunk)
     end
   end
 
@@ -248,25 +249,25 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     {splits_total_length, current_splits}
   end
 
-  defp split_on_separator(separator, text) do
+  defp split_on_separator(separator, %Chunk{text: text}) do
     escaped_separator = Regex.escape(separator)
     regex = Regex.compile!("(?=#{escaped_separator})", [:unicode])
     Regex.split(regex, text, trim: true)
   end
 
-  defp get_splits_with_positions(text, separator, byte_offset) do
-    splits = split_on_separator(separator, text)
+  defp get_splits_with_positions(%Chunk{} = chunk, separator) do
+    splits = split_on_separator(separator, chunk)
 
     {chunk_splits, _} =
-      Enum.reduce(splits, {[], byte_offset}, fn split, {acc, current_offset} ->
-        chunk = %Chunk{
+      Enum.reduce(splits, {[], chunk.start_byte}, fn split, {acc, current_offset} ->
+        new_chunk = %Chunk{
           start_byte: current_offset,
           end_byte: current_offset + byte_size(split),
           text: split
         }
 
         next_offset = current_offset + byte_size(split)
-        {[chunk | acc], next_offset}
+        {[new_chunk | acc], next_offset}
       end)
 
     Enum.reverse(chunk_splits)
