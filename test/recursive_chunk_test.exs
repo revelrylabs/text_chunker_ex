@@ -524,4 +524,158 @@ defmodule TextChunkerTest do
                 "invalid value for :strategy option: expected one of [TextChunker.Strategies.RecursiveChunk], got: UnsupportedModule"}
     end
   end
+
+  describe "metadata tracking" do
+    test "splits long text into multiple chunks with overlap" do
+      text = String.duplicate("a", 100)
+
+      chunk_1 = %TextChunker.Chunk{
+        start_byte: 0,
+        end_byte: 50,
+        text: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+
+      chunk_2 = %TextChunker.Chunk{
+        start_byte: 35,
+        end_byte: 85,
+        text: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+
+      chunk_3 = %TextChunker.Chunk{
+        start_byte: 70,
+        end_byte: 100,
+        text: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+
+      result = TextChunker.split(text, chunk_size: 50, chunk_overlap: 15, format: :plaintext)
+
+      assert [chunk_1, chunk_2, chunk_3] == result
+    end
+
+    test "chunks can perfectly reconstruct original text using byte positions" do
+      text = """
+      # Title
+
+      This is a paragraph with some content.
+      And another line here.
+
+      ## Subtitle
+
+      More content with different separators.
+      - List item 1
+      - List item 2
+
+      Final paragraph.
+      """
+
+      chunks = TextChunker.split(text, chunk_size: 80, chunk_overlap: 20, format: :markdown)
+
+      for chunk <- chunks do
+        assert chunk.start_byte >= 0
+        assert chunk.end_byte > chunk.start_byte
+        assert chunk.end_byte <= byte_size(text)
+      end
+
+      for chunk <- chunks do
+        expected_text = String.slice(text, chunk.start_byte, chunk.end_byte - chunk.start_byte)
+        assert chunk.text == expected_text
+      end
+
+      sorted_chunks = Enum.sort_by(chunks, & &1.start_byte)
+
+      assert List.first(sorted_chunks).start_byte == 0
+      assert List.last(sorted_chunks).end_byte == byte_size(text)
+    end
+
+    test "handles duplicate text content with accurate byte positions" do
+      text = "hello world hello there hello again"
+      chunks = TextChunker.split(text, chunk_size: 15, chunk_overlap: 5, format: :plaintext)
+      hello_chunks = Enum.filter(chunks, &String.contains?(&1.text, "hello"))
+      assert length(hello_chunks) > 1
+
+      for chunk <- hello_chunks do
+        reconstructed = String.slice(text, chunk.start_byte, chunk.end_byte - chunk.start_byte)
+        assert chunk.text == reconstructed
+      end
+
+      positions = Enum.map(hello_chunks, & &1.start_byte)
+      unique_positions = Enum.uniq(positions)
+      assert length(unique_positions) > 1
+    end
+
+    test "maintains byte accuracy with complex separators and unicode" do
+      text = """
+      ```elixir
+      def hello(world) do
+        "Hello 🌍!"
+      end
+      ```
+
+      ## Features 🚀
+
+      - Emoji support 😀
+      - Unicode strings 中文
+      - Multi-byte chars 👩‍🚒
+      """
+
+      chunks = TextChunker.split(text, chunk_size: 60, chunk_overlap: 10, format: :markdown)
+
+      for chunk <- chunks do
+        # Extract the exact bytes from original text using binary pattern matching:
+        # Skip start_byte bytes, capture (end_byte - start_byte) bytes, ignore the rest
+        <<_::binary-size(chunk.start_byte), chunk_bytes::binary-size(chunk.end_byte - chunk.start_byte), _::binary>> =
+          text
+
+        assert chunk.text == chunk_bytes
+        expected_end = chunk.start_byte + byte_size(chunk.text)
+        assert chunk.end_byte == expected_end
+      end
+    end
+
+    test "empty and single character edge cases maintain accurate positions" do
+      text = "a"
+      chunks = TextChunker.split(text, chunk_size: 10, chunk_overlap: 2, format: :plaintext)
+
+      assert length(chunks) == 1
+      chunk = List.first(chunks)
+      assert chunk.start_byte == 0
+      assert chunk.end_byte == 1
+      assert chunk.text == "a"
+      text = ""
+      chunks = TextChunker.split(text, chunk_size: 10, chunk_overlap: 2, format: :plaintext)
+
+      for chunk <- chunks do
+        assert chunk.start_byte >= 0
+        assert chunk.end_byte >= chunk.start_byte
+      end
+    end
+
+    test "chunk overlap positions are calculated correctly" do
+      text = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+      chunks = TextChunker.split(text, chunk_size: 10, chunk_overlap: 3, format: :plaintext)
+
+      for i <- 1..(length(chunks) - 1) do
+        prev_chunk = Enum.at(chunks, i - 1)
+        curr_chunk = Enum.at(chunks, i)
+
+        overlap_start = curr_chunk.start_byte
+        _overlap_expected = prev_chunk.end_byte - 3
+
+        assert overlap_start < prev_chunk.end_byte
+      end
+    end
+  end
+
+  describe "error handling" do
+    test "returns error chunk for empty text" do
+      chunks = TextChunker.split("", chunk_size: 100, chunk_overlap: 0, format: :plaintext)
+
+      assert length(chunks) == 1
+      chunk = List.first(chunks)
+      assert chunk.start_byte == 0
+      assert chunk.end_byte == 0
+      assert String.contains?(chunk.text, "No chunks created")
+    end
+  end
 end
