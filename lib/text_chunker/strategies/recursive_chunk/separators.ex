@@ -39,7 +39,7 @@ defmodule TextChunker.Strategies.RecursiveChunk.Separators do
   end
 
   def get_separators(:plaintext) do
-    empty_and_new_line_separators() ++ [""]
+    empty_and_new_line_separators()
   end
 
   def get_separators(:elixir) do
@@ -168,7 +168,8 @@ defmodule TextChunker.Strategies.RecursiveChunk.Separators do
     [
       "\n\n",
       "\n",
-      " "
+      " ",
+      ""
     ]
   end
 end
