@@ -678,4 +678,88 @@ defmodule TextChunkerTest do
       assert String.contains?(chunk.text, "No chunks created")
     end
   end
+
+  describe "fallback separator behavior" do
+    @non_matching_text "Cool text here to summarize without any special formatting"
+    @supported_formats [
+      :doc,
+      :docx,
+      :elixir,
+      :epub,
+      :html,
+      :javascript,
+      :latex,
+      :markdown,
+      :odt,
+      :pdf,
+      :php,
+      :plaintext,
+      :python,
+      :rtf,
+      :ruby,
+      :typescript,
+      :vue
+    ]
+
+    test "all formats respect chunk size limits when falling back to character splitting" do
+      chunk_size = 10
+
+      Enum.map(@supported_formats, fn format ->
+        chunks = TextChunker.split(@non_matching_text, chunk_size: chunk_size, format: format)
+
+        Enum.map(chunks, fn chunk ->
+          assert byte_size(chunk.text) <= chunk_size,
+                 "Format #{format} produced chunk larger than #{chunk_size}: #{inspect(chunk.text)}"
+        end)
+      end)
+    end
+
+    test "single long word is split correctly across all formats" do
+      long_word = "supercalifragilisticexpialidocious"
+
+      Enum.map(@supported_formats, fn format ->
+        chunks = TextChunker.split(long_word, chunk_size: 10, format: format)
+
+        Enum.map(chunks, fn chunk ->
+          assert byte_size(chunk.text) <= 10
+        end)
+
+        assert String.starts_with?(hd(chunks).text, String.slice(long_word, 0, 5))
+        assert String.ends_with?(List.last(chunks).text, String.slice(long_word, -5, 5))
+      end)
+    end
+
+    test "format-specific separators take precedence over fallback" do
+      markdown_text = "## Header\nContent here\n### Subheader\nMore content"
+      chunks = TextChunker.split(markdown_text, chunk_size: 30, format: :markdown)
+
+      chunk_texts = Enum.map(chunks, & &1.text)
+      assert Enum.any?(chunk_texts, &String.starts_with?(&1, "## Header"))
+
+      python_text = "class Test:\n    def method(self):\n        return 'test'"
+      chunks = TextChunker.split(python_text, chunk_size: 30, format: :python)
+
+      chunk_texts = Enum.map(chunks, & &1.text)
+      assert Enum.any?(chunk_texts, &String.contains?(&1, "class Test:"))
+    end
+
+    test "plaintext-like formats produce consistent results" do
+      plaintext_formats = [:doc, :docx, :epub, :latex, :odt, :pdf, :rtf, :plaintext]
+
+      baseline_chunks =
+        @non_matching_text
+        |> TextChunker.split(chunk_size: 15, format: :plaintext)
+        |> TestHelpers.extract_text_from_chunks()
+
+      Enum.map(plaintext_formats, fn format ->
+        chunks =
+          @non_matching_text
+          |> TextChunker.split(chunk_size: 15, format: format)
+          |> TestHelpers.extract_text_from_chunks()
+
+        assert chunks == baseline_chunks,
+               "Format #{format} should behave like plaintext for non-matching text"
+      end)
+    end
+  end
 end
