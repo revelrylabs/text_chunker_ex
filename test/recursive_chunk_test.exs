@@ -704,29 +704,29 @@ defmodule TextChunkerTest do
     test "all formats respect chunk size limits when falling back to character splitting" do
       chunk_size = 10
 
-      for format <- @supported_formats do
+      Enum.map(@supported_formats, fn format ->
         chunks = TextChunker.split(@non_matching_text, chunk_size: chunk_size, format: format)
 
-        for chunk <- chunks do
+        Enum.map(chunks, fn chunk ->
           assert byte_size(chunk.text) <= chunk_size,
                  "Format #{format} produced chunk larger than #{chunk_size}: #{inspect(chunk.text)}"
-        end
-      end
+        end)
+      end)
     end
 
     test "single long word is split correctly across all formats" do
       long_word = "supercalifragilisticexpialidocious"
 
-      for format <- @supported_formats do
+      Enum.map(@supported_formats, fn format ->
         chunks = TextChunker.split(long_word, chunk_size: 10, format: format)
 
-        for chunk <- chunks do
+        Enum.map(chunks, fn chunk ->
           assert byte_size(chunk.text) <= 10
-        end
+        end)
 
         assert String.starts_with?(hd(chunks).text, String.slice(long_word, 0, 5))
         assert String.ends_with?(List.last(chunks).text, String.slice(long_word, -5, 5))
-      end
+      end)
     end
 
     test "format-specific separators take precedence over fallback" do
@@ -751,7 +751,7 @@ defmodule TextChunkerTest do
         |> TextChunker.split(chunk_size: 15, format: :plaintext)
         |> TestHelpers.extract_text_from_chunks()
 
-      for format <- plaintext_formats do
+      Enum.map(plaintext_formats, fn format ->
         chunks =
           @non_matching_text
           |> TextChunker.split(chunk_size: 15, format: format)
@@ -759,7 +759,7 @@ defmodule TextChunkerTest do
 
         assert chunks == baseline_chunks,
                "Format #{format} should behave like plaintext for non-matching text"
-      end
+      end)
     end
   end
 end
