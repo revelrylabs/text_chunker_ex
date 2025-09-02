@@ -711,15 +711,15 @@ defmodule TextChunkerTest do
       ]
 
       chunks = TextChunker.split(large_content, opts)
-      assert length(chunks) > 0
-      assert length(chunks) < 200
 
-      total_text =
+      assert length(chunks) == 150
+      single_chunk = String.duplicate("a", 1000)
+      assert Enum.all?(chunks, fn %{text: ^single_chunk} -> true end)
+
+      assert large_content ==
         chunks
         |> TestHelpers.extract_text_from_chunks()
         |> Enum.join("")
-
-      assert byte_size(total_text) == byte_size(large_content)
     end
 
     test "all formats respect chunk size limits when falling back to character splitting" do
