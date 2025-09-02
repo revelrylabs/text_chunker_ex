@@ -168,8 +168,7 @@ defmodule TextChunker.Strategies.RecursiveChunk.Separators do
     [
       "\n\n",
       "\n",
-      " ",
-      ""
+      " "
     ]
   end
 end
