@@ -717,9 +717,9 @@ defmodule TextChunkerTest do
       assert Enum.all?(chunks, fn %{text: ^single_chunk} -> true end)
 
       assert large_content ==
-        chunks
-        |> TestHelpers.extract_text_from_chunks()
-        |> Enum.join("")
+               chunks
+               |> TestHelpers.extract_text_from_chunks()
+               |> Enum.join("")
     end
 
     test "all formats respect chunk size limits when falling back to character splitting" do

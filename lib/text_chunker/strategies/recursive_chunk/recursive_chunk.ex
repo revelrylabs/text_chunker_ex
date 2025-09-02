@@ -301,7 +301,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     }
 
     next_start = max(chunk_size - chunk_overlap, 1)
-    remaining_text = String.slice(text, next_start..-1)
+    remaining_text = String.slice(text, next_start..-1//1)
     next_byte_offset = start_byte + byte_size(String.slice(text, 0, next_start))
 
     fallback_splitter(remaining_text, next_byte_offset, chunk_size, chunk_overlap, [chunk | acc])
