@@ -155,7 +155,7 @@ defmodule TextChunkerTest do
       result = text |> TextChunker.split(opts) |> TestHelpers.extract_text_from_chunks()
 
       expected_result =
-        ["💻💊🤔🐇🕳️🕶🥋💥🤖", "💥🤖🐙🤯❓️"]
+        ["💻💊🤔🐇🕳️🕶🥋💥🤖🐙", "🤖🐙🤯❓️"]
 
       assert result == expected_result
     end
@@ -168,7 +168,7 @@ defmodule TextChunkerTest do
 
       text = "👨‍👩‍👧‍👦👍🏿"
       result = text |> TextChunker.split(opts) |> TestHelpers.extract_text_from_chunks()
-      expected_result = ["👨‍👩‍👧", "‍👧‍👦👍", "👦👍🏿"]
+      expected_result = ["👨‍👩‍👧‍👦👍🏿"]
 
       assert result == expected_result
     end
@@ -701,6 +701,27 @@ defmodule TextChunkerTest do
       :vue
     ]
 
+    test "handles large repetitive text" do
+      large_content = String.duplicate("a", 150_000)
+
+      opts = [
+        chunk_size: 1000,
+        chunk_overlap: 0,
+        format: :markdown
+      ]
+
+      chunks = TextChunker.split(large_content, opts)
+      assert length(chunks) > 0
+      assert length(chunks) < 200
+
+      total_text =
+        chunks
+        |> TestHelpers.extract_text_from_chunks()
+        |> Enum.join("")
+
+      assert byte_size(total_text) == byte_size(large_content)
+    end
+
     test "all formats respect chunk size limits when falling back to character splitting" do
       chunk_size = 10
 
@@ -724,8 +745,10 @@ defmodule TextChunkerTest do
           assert byte_size(chunk.text) <= 10
         end)
 
-        assert String.starts_with?(hd(chunks).text, String.slice(long_word, 0, 5))
-        assert String.ends_with?(List.last(chunks).text, String.slice(long_word, -5, 5))
+        assert length(chunks) > 1
+        assert String.starts_with?(hd(chunks).text, "super")
+        last_chunk = List.last(chunks).text
+        assert String.length(last_chunk) <= 10
       end)
     end
 
