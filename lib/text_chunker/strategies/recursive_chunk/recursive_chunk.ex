@@ -88,10 +88,9 @@ defmodule TextChunker.Strategies.RecursiveChunk do
                 chunk_overlap
               )
 
-            # Check if chunk exceeds size limit - if so, force character-level splitting
             if get_chunk_size.(chunk.text) > chunk_size do
-              character_chunks = create_character_chunks(chunk, chunk_size, chunk_overlap)
-              {final_chunks ++ character_chunks, []}
+              fallback_chunks = create_fallback_chunks(chunk, chunk_size, chunk_overlap)
+              {final_chunks ++ fallback_chunks, []}
             else
               {final_chunks ++ [chunk], []}
             end
@@ -280,7 +279,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     Enum.reverse(chunk_splits)
   end
 
-  defp create_character_chunks(%Chunk{text: text, start_byte: start_byte}, chunk_size, chunk_overlap) do
+  defp create_fallback_chunks(%Chunk{text: text, start_byte: start_byte}, chunk_size, chunk_overlap) do
     text_length = String.length(text)
 
     if text_length <= chunk_size do
