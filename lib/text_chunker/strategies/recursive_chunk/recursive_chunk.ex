@@ -88,7 +88,12 @@ defmodule TextChunker.Strategies.RecursiveChunk do
                 chunk_overlap
               )
 
-            {final_chunks ++ [chunk], []}
+            if get_chunk_size.(chunk.text) > chunk_size do
+              fallback_chunks = create_fallback_chunks(chunk, chunk_size, chunk_overlap)
+              {final_chunks ++ fallback_chunks, []}
+            else
+              {final_chunks ++ [chunk], []}
+            end
 
           true ->
             final_chunks =
@@ -272,5 +277,33 @@ defmodule TextChunker.Strategies.RecursiveChunk do
       end)
 
     Enum.reverse(chunk_splits)
+  end
+
+  defp create_fallback_chunks(%Chunk{text: text, start_byte: start_byte}, chunk_size, chunk_overlap) do
+    text_length = String.length(text)
+
+    if text_length <= chunk_size do
+      [%Chunk{text: text, start_byte: start_byte, end_byte: start_byte + byte_size(text)}]
+    else
+      fallback_splitter(text, start_byte, chunk_size, chunk_overlap, [])
+    end
+  end
+
+  defp fallback_splitter("", _start_byte, _chunk_size, _chunk_overlap, acc), do: Enum.reverse(acc)
+
+  defp fallback_splitter(text, start_byte, chunk_size, chunk_overlap, acc) do
+    chunk_text = String.slice(text, 0, chunk_size)
+
+    chunk = %Chunk{
+      text: chunk_text,
+      start_byte: start_byte,
+      end_byte: start_byte + byte_size(chunk_text)
+    }
+
+    next_start = max(chunk_size - chunk_overlap, 1)
+    remaining_text = String.slice(text, next_start..-1//1)
+    next_byte_offset = start_byte + byte_size(String.slice(text, 0, next_start))
+
+    fallback_splitter(remaining_text, next_byte_offset, chunk_size, chunk_overlap, [chunk | acc])
   end
 end
