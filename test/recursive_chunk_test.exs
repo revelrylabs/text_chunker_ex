@@ -194,20 +194,58 @@ defmodule TextChunkerTest do
     test "splits text into chunks sized according to the get_chunk_size" do
       {:ok, text} = File.read("test/support/fixtures/document_fixtures/hamlet.txt")
 
+      # Custom sizing: count 1-3 character word chunks as "tokens"
+      token_counter = fn chunk ->
+        ~r/\w{1,3}/u
+        |> Regex.scan(chunk)
+        |> length()
+      end
+
       opts = [
         chunk_size: 1000,
-        get_chunk_size: fn chunk ->
-          ~r/\w{1,3}/u
-          |> Regex.scan(chunk)
-          |> length()
-        end,
+        get_chunk_size: token_counter,
         chunk_overlap: 0,
         format: :plaintext
       ]
 
-      chunk_count = TextChunker.split(text, opts)
+      chunks = TextChunker.split(text, opts)
 
-      assert length(chunk_count) == 212
+      assert length(chunks) == 81
+
+      for chunk <- chunks do
+        assert token_counter.(chunk.text) <= 1000
+      end
+    end
+
+    test "get_chunk_size function is used during chunk merging" do
+      text = String.duplicate("hello world ", 50)
+
+      # 1 token ≈ 4 chars
+      token_fn = fn text -> max(1, div(String.length(text), 4)) end
+
+      token_chunks =
+        TextChunker.split(text,
+          chunk_size: 100,
+          chunk_overlap: 0,
+          get_chunk_size: token_fn
+        )
+
+      char_chunks =
+        TextChunker.split(text,
+          chunk_size: 100,
+          chunk_overlap: 0
+        )
+
+      assert length(token_chunks) < length(char_chunks),
+             "Expected fewer token-based chunks than character-based chunks. " <>
+               "Token chunks: #{length(token_chunks)}, Char chunks: #{length(char_chunks)}"
+
+      for chunk <- token_chunks do
+        size = token_fn.(chunk.text)
+
+        assert size <= 100,
+               "Chunk exceeds token limit: #{size} tokens (#{String.length(chunk.text)} chars)"
+      end
     end
 
     test "splits text into chunks with lengths that match the original file" do
@@ -712,9 +750,9 @@ defmodule TextChunkerTest do
 
       chunks = TextChunker.split(large_content, opts)
 
-      assert length(chunks) == 150
-      single_chunk = String.duplicate("a", 1000)
-      assert Enum.all?(chunks, fn %{text: ^single_chunk} -> true end)
+      for chunk <- Enum.drop(chunks, -1) do
+        assert String.length(chunk.text) == 1000
+      end
 
       assert large_content ==
                chunks
