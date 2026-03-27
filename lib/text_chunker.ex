@@ -36,7 +36,8 @@ defmodule TextChunker do
     :rtf,
     :ruby,
     :typescript,
-    :vue
+    :vue,
+    :vtt
   ]
 
   @opts_schema [

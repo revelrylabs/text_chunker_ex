@@ -518,6 +518,35 @@ defmodule TextChunkerTest do
     end
   end
 
+  describe "chunker with VTT separators" do
+    test "splits a VTT file on cue block boundaries" do
+      opts = [
+        chunk_size: 100,
+        chunk_overlap: 0,
+        format: :vtt
+      ]
+
+      {:ok, text} = File.read("test/support/fixtures/document_fixtures/test_file.vtt")
+      result = text |> TextChunker.split(opts) |> TestHelpers.extract_text_from_chunks()
+
+      expected_result = [
+        "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\nWelcome to the Elixir tutorial series.",
+        "\n\n00:00:05.000 --> 00:00:09.000\n— Elixir runs on the BEAM virtual machine.",
+        "\n— It was designed for scalability.",
+        "\n\n00:00:10.000 --> 00:00:14.000\nAlways wear a helmet when riding a bicycle.",
+        "\nSafety is important for everyone.",
+        "\n\n00:00:15.000 --> 00:00:19.000\nThe quick brown fox jumps over the lazy dog.",
+        "\nThis sentence contains every letter of the alphabet.",
+        "\n\n00:00:20.000 --> 00:00:24.000\nElixir is a functional programming language.",
+        "\nIt runs on the Erlang virtual machine.",
+        "\n\n00:00:25.000 --> 00:00:30.000\nPattern matching is one of Elixir's most powerful features.",
+        "\nIt allows you to destructure data with ease.\n"
+      ]
+
+      assert result == expected_result
+    end
+  end
+
   describe "rejects unsupported options" do
     test "rejects a chunk_overlap of -1" do
       opts = [
@@ -546,7 +575,7 @@ defmodule TextChunkerTest do
 
       assert result == {
                :error,
-               "invalid value for :format option: expected one of [:doc, :docx, :elixir, :epub, :html, :javascript, :latex, :markdown, :odt, :pdf, :php, :plaintext, :python, :rtf, :ruby, :typescript, :vue], got: :made_up_format"
+               "invalid value for :format option: expected one of [:doc, :docx, :elixir, :epub, :html, :javascript, :latex, :markdown, :odt, :pdf, :php, :plaintext, :python, :rtf, :ruby, :typescript, :vue, :vtt], got: :made_up_format"
              }
     end
 
@@ -736,7 +765,8 @@ defmodule TextChunkerTest do
       :rtf,
       :ruby,
       :typescript,
-      :vue
+      :vue,
+      :vtt
     ]
 
     test "handles large repetitive text" do
@@ -805,7 +835,7 @@ defmodule TextChunkerTest do
     end
 
     test "plaintext-like formats produce consistent results" do
-      plaintext_formats = [:doc, :docx, :epub, :latex, :odt, :pdf, :rtf, :plaintext]
+      plaintext_formats = [:doc, :docx, :epub, :latex, :odt, :pdf, :rtf, :vtt, :plaintext]
 
       baseline_chunks =
         @non_matching_text

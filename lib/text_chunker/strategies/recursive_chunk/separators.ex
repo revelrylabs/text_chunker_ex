@@ -17,7 +17,8 @@ defmodule TextChunker.Strategies.RecursiveChunk.Separators do
     :latex,
     :odt,
     :pdf,
-    :rtf
+    :rtf,
+    :vtt
   ]
 
   @spec get_separators(atom) :: [String.t()]
