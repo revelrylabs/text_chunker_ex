@@ -1,0 +1,24 @@
+WEBVTT
+
+00:00:01.000 --> 00:00:04.000
+Welcome to the Elixir tutorial series.
+
+00:00:05.000 --> 00:00:09.000
+— Elixir runs on the BEAM virtual machine.
+— It was designed for scalability.
+
+00:00:10.000 --> 00:00:14.000
+Always wear a helmet when riding a bicycle.
+Safety is important for everyone.
+
+00:00:15.000 --> 00:00:19.000
+The quick brown fox jumps over the lazy dog.
+This sentence contains every letter of the alphabet.
+
+00:00:20.000 --> 00:00:24.000
+Elixir is a functional programming language.
+It runs on the Erlang virtual machine.
+
+00:00:25.000 --> 00:00:30.000
+Pattern matching is one of Elixir's most powerful features.
+It allows you to destructure data with ease.

@@ -36,6 +36,7 @@ defmodule TextChunker do
     :rtf,
     :ruby,
     :typescript,
+    :vtt,
     :vue
   ]
 
