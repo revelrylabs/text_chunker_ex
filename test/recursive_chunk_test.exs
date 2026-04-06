@@ -575,7 +575,7 @@ defmodule TextChunkerTest do
 
       assert result == {
                :error,
-               "invalid value for :format option: expected one of [:doc, :docx, :elixir, :epub, :html, :javascript, :latex, :markdown, :odt, :pdf, :php, :plaintext, :python, :rtf, :ruby, :typescript, :vue, :vtt], got: :made_up_format"
+               "invalid value for :format option: expected one of [:doc, :docx, :elixir, :epub, :html, :javascript, :latex, :markdown, :odt, :pdf, :php, :plaintext, :python, :rtf, :ruby, :typescript, :vtt, :vue], got: :made_up_format"
              }
     end
 
