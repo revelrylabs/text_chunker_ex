@@ -11,6 +11,9 @@ defmodule TextChunker.MixProject do
       elixir: "~> 1.15",
       deps: deps(),
       start_permanent: Mix.env() == :prod,
+      dialyzer: [
+        plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
+      ],
 
       source_url: @source_url,
       homepage_url: "https://github.com/revelrylabs",
@@ -37,6 +40,7 @@ defmodule TextChunker.MixProject do
     [
       {:styler, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.29", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:nimble_options, "~> 1.0"}
     ]
   end
