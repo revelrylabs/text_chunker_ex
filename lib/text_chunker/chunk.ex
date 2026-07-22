@@ -5,9 +5,9 @@ defmodule TextChunker.Chunk do
 
   @type t() :: %__MODULE__{
           # Byte offset of the chunk's start within the original text
-          start_byte: integer(),
+          start_byte: non_neg_integer(),
           # Byte offset marking the end of the chunk
-          end_byte: integer(),
+          end_byte: non_neg_integer(),
           # The textual content of this chunk
           text: String.t()
         }

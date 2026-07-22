@@ -48,7 +48,7 @@ text = "Your text to be split..."
 chunks = TextChunker.split(text)
 ```
 
-This will chunk up your text using the default parameters - a chunk size of `1000`, chunk overlap of `200`, format of `:plaintext` and using the `RecursiveChunk` strategy.
+This will chunk up your text using the default parameters - a chunk size of `2000`, chunk overlap of `200`, format of `:plaintext` and using the `RecursiveChunk` strategy.
 
 The split method returns `Chunks` of your text. These chunks include the start and end bytes of each chunk.
 
@@ -64,9 +64,11 @@ The split method returns `Chunks` of your text. These chunks include the start a
 
 If you wish to adjust these parameters, configuration can optionally be passed via a keyword list. 
 
-  - `chunk_size` -  The approximate target chunk size, as measured per code points. This means that both `a` and `👻` count as one. Chunks will not exceed this maximum, but may sometimes be smaller. **Important note** This means that graphemes *may* be split. For example, `👩‍🚒` may be split into `👩,🚒` or not depending on the split boundary.
-  - `chunk_overlap` - The contextual overlap between chunks, as measured per code point. Overlap is *not* guaranteed; again this should be treated as a maximum. The size of an individual overlap will depend on the semantics of the text being split.
-  - `format` - What informs separator selection. Because we are trying to preserve meaning between the chunks, the format of the text we are splitting is important. It's important to split newlines in plain text; it's important to split `###` headings in markdown.
+  - `chunk_size` (default: `2000`) - The approximate target chunk size, as measured by the `get_chunk_size` function. By default this counts graphemes, meaning both `a` and `👻` count as one. Chunks will not exceed this maximum, but may sometimes be smaller.
+  - `chunk_overlap` (default: `200`) - The contextual overlap between chunks, measured the same way as `chunk_size`. Overlap is *not* guaranteed; again this should be treated as a maximum. The size of an individual overlap will depend on the semantics of the text being split.
+  - `get_chunk_size` (default: `&String.length/1`) - The function used to measure chunk size. Swap this out to chunk by a different measure - for example, pass a tokenizer's token counter to size chunks by token count.
+  - `format` (default: `:plaintext`) - What informs separator selection. Because we are trying to preserve meaning between the chunks, the format of the text we are splitting is important. It's important to split newlines in plain text; it's important to split `###` headings in markdown.
+  - `strategy` (default: `TextChunker.Strategies.RecursiveChunk`) - The module implementing the chunking strategy. Currently `RecursiveChunk` is the only supported strategy.
 
 ```elixir
 text = """

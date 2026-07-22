@@ -4,5 +4,5 @@ defmodule TextChunker.ChunkerBehaviour do
   """
   alias TextChunker.Chunk
 
-  @callback split(text :: binary(), opts :: [keyword()]) :: [Chunk.t()]
+  @callback split(text :: binary(), opts :: keyword()) :: [Chunk.t()]
 end

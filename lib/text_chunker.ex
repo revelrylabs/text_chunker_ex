@@ -15,6 +15,7 @@ defmodule TextChunker do
   * `:strategy` (module default: `RecursiveChunk`) - A module implementing the split function. Currently only `RecursiveChunk` is supported.
   * `:format` (atom, default: `:plaintext`) - The format of the input text. Used to determine where to split the text in some strategies.
   """
+  alias TextChunker.Chunk
   alias TextChunker.Strategies.RecursiveChunk
 
   @supported_strategies [RecursiveChunk]
