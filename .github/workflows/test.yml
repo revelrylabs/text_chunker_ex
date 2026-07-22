@@ -10,31 +10,65 @@ permissions:
 
 jobs:
   build:
-    name: test
+    name: test (Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }})
     runs-on: ubuntu-22.04
     env:
-      HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
       MIX_ENV: test
     strategy:
+      fail-fast: false
       matrix:
-        otp: ["25.2"]
-        elixir: ["1.15.6"]
+        include:
+          # Lowest supported versions (see elixir requirement in mix.exs)
+          - otp: "25.2"
+            elixir: "1.15.6"
+            check_formatted: false
+          # Latest supported versions
+          - otp: "27"
+            elixir: "1.18"
+            check_formatted: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{matrix.otp}}
           elixir-version: ${{matrix.elixir}}
       - name: Restore dependencies cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: deps
-          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
-          restore-keys: ${{ runner.os }}-mix-
+          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-
       - name: Install dependencies
         run: mix deps.get
       - name: Check formatting
+        if: matrix.check_formatted
         run: mix format --check-formatted
       - name: Run tests
         run: mix test
-        
+
+  dialyzer:
+    name: dialyzer
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        id: beam
+        with:
+          otp-version: "27"
+          elixir-version: "1.18"
+      - name: Restore dependencies cache
+        uses: actions/cache@v4
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-mix-
+      - name: Restore PLT cache
+        uses: actions/cache@v4
+        with:
+          path: priv/plts
+          key: ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-plt-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-plt-
+      - name: Install dependencies
+        run: mix deps.get
+      - name: Run Dialyzer
+        run: mix dialyzer --format github

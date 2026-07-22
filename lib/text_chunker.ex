@@ -10,11 +10,12 @@ defmodule TextChunker do
 
   **Supported Options**
   * `:chunk_size` (positive integer, default: 2000) - Maximum size in token length for each chunk.
-  * `:get_chunk_size` (function, default: &String.length/1) - A function that returns the number of tokens in a chunk, by default the number of code points.
+  * `:get_chunk_size` (function, default: &String.length/1) - A function that returns the number of tokens in a chunk, by default the number of graphemes.
   * `:chunk_overlap` (non-negative integer, default: 200) - Number of overlapping tokens between consecutive chunks to preserve context.
   * `:strategy` (module default: `RecursiveChunk`) - A module implementing the split function. Currently only `RecursiveChunk` is supported.
   * `:format` (atom, default: `:plaintext`) - The format of the input text. Used to determine where to split the text in some strategies.
   """
+  alias TextChunker.Chunk
   alias TextChunker.Strategies.RecursiveChunk
 
   @supported_strategies [RecursiveChunk]

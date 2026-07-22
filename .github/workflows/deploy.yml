@@ -10,18 +10,14 @@ jobs:
     env:
       HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
       MIX_ENV: test
-    strategy:
-      matrix:
-        otp: ["25.2"]
-        elixir: ["1.15.6"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: ${{matrix.otp}}
-          elixir-version: ${{matrix.elixir}}
+          otp-version: "27"
+          elixir-version: "1.18"
       - name: Restore dependencies cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: deps
           key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
@@ -32,4 +28,3 @@ jobs:
         run: mix test
       - name: Deploy package
         run: mix hex.publish --yes
-        
