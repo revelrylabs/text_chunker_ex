@@ -31,7 +31,10 @@ defmodule TextChunker.RecursiveChunkPropertyTest do
   ]
 
   # Fragments that stress the chunker: unicode, emoji (including multi-codepoint
-  # ZWJ sequences), CRLF pairs, whitespace runs, and format-specific separators.
+  # ZWJ sequences and regional-indicator pairs), CRLF pairs, whitespace runs,
+  # zero-width and bidirectional format controls (as \u escapes so this source
+  # file contains no raw bidi bytes), combining-mark stacks, and
+  # format-specific separators.
   @tricky_fragments [
     " ",
     "\n",
@@ -45,6 +48,17 @@ defmodule TextChunker.RecursiveChunkPropertyTest do
     "💻",
     "👍🏿",
     "👨‍👩‍👧‍👦",
+    # flag emoji: a regional-indicator pair forming a single grapheme
+    "🇨🇦",
+    # combining-mark stack (Zalgo): one grapheme, one base + eight marks
+    "e\u0301\u0300\u0302\u0303\u0316\u0317\u0318\u0319",
+    # zero-width space and BOM/ZWNBSP appearing mid-text
+    "\u200B",
+    "\uFEFF",
+    # bidi overrides and isolates: balanced, unbalanced, and isolate pair
+    "\u202Eevil\u202C",
+    "\u202E",
+    "\u2066hi\u2069",
     "\ndef ",
     "  def ",
     "\nclass ",
@@ -72,8 +86,8 @@ defmodule TextChunker.RecursiveChunkPropertyTest do
   # Like input_text/0, but without raw `string(:printable)`. Arbitrary printable
   # codepoints include Prepend-class characters (e.g. U+0600), which form a
   # single grapheme cluster with a *following* ASCII character; a separator
-  # match there splits the cluster. Real-world text virtually never does this,
-  # and the documented grapheme guarantee (README) excepts only CRLF, so the
+  # match there splits the cluster. This is one of the two documented
+  # exceptions to the grapheme guarantee (see README, alongside CRLF), so the
   # grapheme property sticks to a curated alphabet.
   defp grapheme_safe_text do
     fragment =
