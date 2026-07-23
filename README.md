@@ -64,7 +64,7 @@ The split method returns `Chunks` of your text. These chunks include the start a
 
 If you wish to adjust these parameters, configuration can optionally be passed via a keyword list. 
 
-  - `chunk_size` (default: `2000`) - The maximum chunk size, as measured by the `get_chunk_size` function. Chunks will not exceed this maximum, but may sometimes be smaller. By default, size is measured in *graphemes* - user-perceived characters, which is what `String.length/1` counts. A grapheme may be made up of several codepoints and many bytes, yet still count as one: `a`, `é`, and `👨‍👩‍👧‍👦` are each a single grapheme (that family emoji is 7 codepoints and 25 bytes). Chunks never split a user-visible character down the middle: emoji sequences, accented characters, and other multi-codepoint graphemes are always kept whole, whichever measure you use. (There are two technical exceptions. First, a `\r\n` Windows line ending: Unicode counts the pair as a single grapheme, but the chunker may treat it as a line boundary and split between the two. Second, Unicode Prepend-class format characters such as `U+0600` ARABIC NUMBER SIGN, which form a single grapheme with the character that *follows* them: if a separator match lands immediately after one, the chunker may split inside that cluster. Well-formed text places digits, not separators, after these characters, so this does not arise in practice.) Note that the chunker never inserts or removes bytes: if the input contains paired formatting state such as a bidirectional override (`U+202E … U+202C`), a chunk boundary may fall between the pair, leaving each chunk individually unbalanced when rendered on its own - even though concatenating the chunks still reproduces the input exactly. Sanitizing text for display is the caller's responsibility.
+  - `chunk_size` (default: `2000`) - The maximum chunk size, as measured by the `get_chunk_size` function. Chunks will not exceed this maximum, but may sometimes be smaller. By default, size is measured in *graphemes* - user-perceived characters, which is what `String.length/1` counts, so `a`, `é`, and `👨‍👩‍👧‍👦` each count as one. Chunks never split a user-visible character down the middle, whichever measure you use (see [Unicode edge cases](#unicode-edge-cases) for two rare exceptions).
   - `chunk_overlap` (default: `200`) - The contextual overlap between chunks, measured the same way as `chunk_size`. Overlap is *not* guaranteed; again this should be treated as a maximum. The size of an individual overlap will depend on the semantics of the text being split.
   - `get_chunk_size` (default: `&String.length/1`) - The function used to measure chunk size. Swap this out to chunk by a different measure - for example, pass a tokenizer's token counter to size chunks by token count.
   - `format` (default: `:plaintext`) - What informs separator selection. Because we are trying to preserve meaning between the chunks, the format of the text we are splitting is important. It's important to split newlines in plain text; it's important to split `###` headings in markdown.
@@ -126,6 +126,15 @@ iex(10)> TextChunker.split(text, opts)
   }
 ]
 ```
+
+## Unicode Edge Cases
+
+Chunks keep emoji sequences, accented characters, and other multi-codepoint graphemes whole - a grapheme may be made up of several codepoints and many bytes, yet still count as one user-visible character (the family emoji `👨‍👩‍👧‍👦` is 7 codepoints and 25 bytes). There are two technical exceptions where a chunk boundary can fall inside a grapheme cluster:
+
+  1. **Windows line endings** - Unicode counts a `\r\n` pair as a single grapheme, but the chunker may treat it as a line boundary and split between the two.
+  2. **Prepend-class format characters** - characters such as `U+0600` ARABIC NUMBER SIGN form a single grapheme with the character that *follows* them. If a separator match lands immediately after one, the chunker may split inside that cluster. Well-formed text places digits, not separators, after these characters, so this does not arise in practice.
+
+Also note that the chunker never inserts or removes bytes: if the input contains paired formatting state such as a bidirectional override (`U+202E … U+202C`), a chunk boundary may fall between the pair, leaving each chunk individually unbalanced when rendered on its own - even though concatenating the chunks still reproduces the input exactly. Sanitizing text for display is the caller's responsibility.
 
 ## Contributing and Development
 
