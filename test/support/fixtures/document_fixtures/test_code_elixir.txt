@@ -1,0 +1,39 @@
+defmodule PetShop do
+  @doc """
+  Adds a specified quantity of a pet type to the inventory.
+  """
+  def add_pet(inventory, pet_type, quantity) do
+    if Map.has_key?(inventory, pet_type) do
+      Map.update!(inventory, pet_type, &(&1 + quantity))
+    else
+      Map.put(inventory, pet_type, quantity)
+    end
+  end
+
+  @doc """
+  Sells a specified quantity of a pet type.
+  """
+  def sell_pet(inventory, pet_type, quantity) do
+    with {:ok, available} <- Map.fetch(inventory, pet_type),
+         true <- available >= quantity do
+      {:ok, Map.put(inventory, pet_type, available - quantity)}
+    else
+      _ -> {:error, :insufficient_stock}
+    end
+  end
+
+  defp validate_quantity(quantity) do
+    case quantity do
+      q when is_integer(q) and q > 0 -> :ok
+      _ -> {:error, :invalid_quantity}
+    end
+  end
+end
+
+defmodule PetShop.Report do
+  def summary(inventory) do
+    Enum.map_join(inventory, "\n", fn {pet_type, count} ->
+      "#{pet_type}: #{count}"
+    end)
+  end
+end

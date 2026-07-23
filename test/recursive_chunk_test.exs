@@ -413,6 +413,108 @@ defmodule TextChunkerTest do
     end
   end
 
+  describe "chunker with elixir separators" do
+    test "splits on module, doc, and function boundaries" do
+      opts = [
+        chunk_size: 100,
+        chunk_overlap: 0,
+        format: :elixir
+      ]
+
+      {:ok, text} = File.read("test/support/fixtures/document_fixtures/test_code_elixir.txt")
+
+      chunks = TextChunker.split(text, opts)
+      texts = TestHelpers.extract_text_from_chunks(chunks)
+
+      assert length(chunks) > 1
+      assert Enum.join(texts) == text
+      assert Enum.all?(texts, &(String.length(&1) <= 100))
+
+      assert Enum.any?(texts, &String.starts_with?(&1, "defmodule PetShop do"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "\ndefmodule PetShop.Report do"))
+      assert Enum.any?(texts, &String.starts_with?(&1, ~s(@doc """)))
+      assert Enum.any?(texts, &String.starts_with?(&1, "  def add_pet"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "  def sell_pet"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "  defp validate_quantity"))
+    end
+  end
+
+  describe "chunker with ruby separators" do
+    test "splits on class, comment, method, and private boundaries" do
+      opts = [
+        chunk_size: 100,
+        chunk_overlap: 0,
+        format: :ruby
+      ]
+
+      {:ok, text} = File.read("test/support/fixtures/document_fixtures/test_code.rb")
+
+      chunks = TextChunker.split(text, opts)
+      texts = TestHelpers.extract_text_from_chunks(chunks)
+
+      assert length(chunks) > 1
+      assert Enum.join(texts) == text
+      assert Enum.all?(texts, &(String.length(&1) <= 100))
+
+      assert Enum.any?(texts, &String.starts_with?(&1, "class PetShop"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "  ## Represents"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "  def initialize"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "  def add_pet"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "  def sell_pet"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "  private\n"))
+    end
+  end
+
+  describe "chunker with php separators" do
+    test "splits on class, docblock, and function boundaries" do
+      opts = [
+        chunk_size: 100,
+        chunk_overlap: 0,
+        format: :php
+      ]
+
+      {:ok, text} = File.read("test/support/fixtures/document_fixtures/test_code.php")
+
+      chunks = TextChunker.split(text, opts)
+      texts = TestHelpers.extract_text_from_chunks(chunks)
+
+      assert length(chunks) > 1
+      assert Enum.join(texts) == text
+      assert Enum.all?(texts, &(String.length(&1) <= 100))
+
+      assert Enum.any?(texts, &String.starts_with?(&1, "\nclass PetShop"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "  /**"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "public function addPet"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "public function sellPet"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "private function restockThreshold"))
+    end
+  end
+
+  describe "chunker with vue separators" do
+    test "splits on template, section, table, and script boundaries" do
+      opts = [
+        chunk_size: 100,
+        chunk_overlap: 0,
+        format: :vue
+      ]
+
+      {:ok, text} = File.read("test/support/fixtures/document_fixtures/test_code.vue")
+
+      chunks = TextChunker.split(text, opts)
+      texts = TestHelpers.extract_text_from_chunks(chunks)
+
+      assert length(chunks) > 1
+      assert Enum.join(texts) == text
+      assert Enum.all?(texts, &(String.length(&1) <= 100))
+
+      assert Enum.any?(texts, &String.starts_with?(&1, "<template>"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "<section"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "<table>"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "<script>"))
+      assert Enum.any?(texts, &String.starts_with?(&1, "\nexport default {"))
+    end
+  end
+
   describe "chunker with HTML separators" do
     test "splits an HTML file" do
       opts = [
