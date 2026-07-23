@@ -170,7 +170,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   defp merge_splits_into_chunks(splits, chunk_size, chunk_overlap, get_chunk_size, current_separator) do
     {final_chunks, current_splits} =
       Enum.reduce(splits, {[], []}, fn split, {final_chunks, current_splits} ->
-        current_texts = Enum.map(current_splits, fn split -> split.text end)
+        current_texts = Enum.map(current_splits, & &1.text)
 
         bigger_than_chunk? =
           splits_bigger_than_chunk?(
@@ -223,7 +223,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
           nil
 
         _ ->
-          chunk_text = join_splits(Enum.map(current_splits, fn split -> split.text end), current_separator)
+          chunk_text = join_splits(Enum.map(current_splits, & &1.text), current_separator)
 
           chunk_start_pos =
             case current_splits do
@@ -263,7 +263,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   defp trim_splits_for_overlap([], _chunk_overlap, _chunk_size, _next_split_text, _get_chunk_size, _separator), do: []
 
   defp trim_splits_for_overlap(current_splits, chunk_overlap, chunk_size, next_split_text, get_chunk_size, separator) do
-    current_texts = Enum.map(current_splits, fn split -> split.text end)
+    current_texts = Enum.map(current_splits, & &1.text)
     merged = join_splits(current_texts, separator)
     current_size = get_chunk_size.(merged || "")
 
