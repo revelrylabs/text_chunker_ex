@@ -3,6 +3,13 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   Handles recursive text splitting, aiming to adhere to configured size and overlap requirements.
   Employs a flexible separator-based approach to break down text into manageable chunks, while generating metadata for each produced chunk.
 
+  **Terminology**
+
+  * **Split:** An intermediate text fragment produced by breaking text on a separator. A split may still exceed `chunk_size` and require further splitting.
+  * **Chunk:** A final, correctly-sized text segment returned to the caller.
+
+  Both are represented by `%TextChunker.Chunk{}` structs internally; the names refer to their role in the algorithm.
+
   **Key Features:**
 
   * **Size-Guided Chunking:** Prioritizes splitting text into semantic blocks while respecting the maximum `chunk_size`.
@@ -16,9 +23,9 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   2. **Recursive Splitting:**
     *  Iterates through the separator list.
     *  Attempts to split the text using the current separator.
-    *  If a split is successful, recursively applies the algorithm to any resulting sub-chunks that still exceed the `chunk_size`.
+    *  If a split is successful, recursively applies the algorithm to any resulting splits that still exceed the `chunk_size`.
   3. **Chunk Assembly:**
-    *  Combines smaller text segments into chunks, aiming to get as close to the `chunk_size` as possible.
+    *  Combines splits into chunks, aiming to get as close to the `chunk_size` as possible.
     *  Employs `chunk_overlap` to ensure smooth transitions between chunks.
   4. **Metadata Generation:**  Tracks byte ranges for each chunk for potential reassembly of the original text.
   """
@@ -50,8 +57,8 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     chunk_size = opts[:chunk_size]
     chunk_overlap = opts[:chunk_overlap]
     get_chunk_size = opts[:get_chunk_size]
-    initial_chunk = %Chunk{text: text, start_byte: 0, end_byte: byte_size(text)}
-    chunks = perform_split(initial_chunk, separators, chunk_size, chunk_overlap, get_chunk_size)
+    initial_split = %Chunk{text: text, start_byte: 0, end_byte: byte_size(text)}
+    chunks = perform_split(initial_split, separators, chunk_size, chunk_overlap, get_chunk_size)
 
     case chunks do
       [] ->
@@ -69,15 +76,15 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   end
 
   # **Recursive Splitting:**
-  defp perform_split(%Chunk{} = chunk, separators, chunk_size, chunk_overlap, get_chunk_size) do
-    {current_separator, remaining_separators} = get_active_separator(separators, chunk)
-    splits_with_positions = get_splits_with_positions(chunk, current_separator)
+  defp perform_split(%Chunk{} = parent_split, separators, chunk_size, chunk_overlap, get_chunk_size) do
+    {current_separator, remaining_separators} = get_active_separator(separators, parent_split)
+    splits_with_positions = get_splits_with_positions(parent_split, current_separator)
 
     {final_chunks, good_splits} =
-      Enum.reduce(splits_with_positions, {[], []}, fn chunk, {final_chunks, good_splits} ->
+      Enum.reduce(splits_with_positions, {[], []}, fn split, {final_chunks, good_splits} ->
         cond do
-          chunk_small_enough?(chunk, chunk_size, get_chunk_size) ->
-            {final_chunks, good_splits ++ [chunk]}
+          fits_in_chunk?(split, chunk_size, get_chunk_size) ->
+            {final_chunks, good_splits ++ [split]}
 
           Enum.empty?(remaining_separators) ->
             final_chunks =
@@ -89,11 +96,11 @@ defmodule TextChunker.Strategies.RecursiveChunk do
                 get_chunk_size
               )
 
-            if get_chunk_size.(chunk.text) > chunk_size do
-              fallback_chunks = create_fallback_chunks(chunk, chunk_size, chunk_overlap, get_chunk_size)
+            if get_chunk_size.(split.text) > chunk_size do
+              fallback_chunks = create_fallback_chunks(split, chunk_size, chunk_overlap, get_chunk_size)
               {final_chunks ++ fallback_chunks, []}
             else
-              {final_chunks ++ [chunk], []}
+              {final_chunks ++ [split], []}
             end
 
           true ->
@@ -107,7 +114,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
               )
 
             more_chunks =
-              perform_split(chunk, remaining_separators, chunk_size, chunk_overlap, get_chunk_size)
+              perform_split(split, remaining_separators, chunk_size, chunk_overlap, get_chunk_size)
 
             {final_chunks ++ more_chunks, []}
         end
@@ -136,39 +143,38 @@ defmodule TextChunker.Strategies.RecursiveChunk do
        ) do
     case good_splits do
       [] -> final_chunks
-      _ -> final_chunks ++ merge_splits_with_positions(good_splits, chunk_size, chunk_overlap, get_chunk_size, separator)
+      _ -> final_chunks ++ merge_splits_into_chunks(good_splits, chunk_size, chunk_overlap, get_chunk_size, separator)
     end
   end
 
   # Fallback when no separators match - use space as final separator
-  defp get_active_separator([], _chunk) do
+  defp get_active_separator([], _split) do
     {" ", []}
   end
 
   # Returns the first separator found in text, removing it from the list.
   # Example: ["\n\n", "\n", " "] -> if text contains "\n\n", returns {"\n\n", ["\n", " "]}
-  defp get_active_separator(all_separators, %Chunk{text: text} = chunk) do
+  defp get_active_separator(all_separators, %Chunk{text: text} = split) do
     [active_separator | rest] = all_separators
 
     if String.contains?(text, active_separator) do
       {active_separator, rest}
     else
-      get_active_separator(rest, chunk)
+      get_active_separator(rest, split)
     end
   end
 
-  defp chunk_small_enough?(%Chunk{text: text}, max_chunk_size, get_chunk_size),
-    do: get_chunk_size.(text) <= max_chunk_size
+  defp fits_in_chunk?(%Chunk{text: text}, max_chunk_size, get_chunk_size), do: get_chunk_size.(text) <= max_chunk_size
 
-  # Collapses the splits based on separators into the correct chunk_size, and adds the overlap
-  defp merge_splits_with_positions(chunk_splits, chunk_size, chunk_overlap, get_chunk_size, current_separator) do
+  # Merges splits into chunks that respect chunk_size, adding the overlap between chunks
+  defp merge_splits_into_chunks(splits, chunk_size, chunk_overlap, get_chunk_size, current_separator) do
     {final_chunks, current_splits} =
-      Enum.reduce(chunk_splits, {[], []}, fn split_chunk, {final_chunks, current_splits} ->
-        current_texts = Enum.map(current_splits, fn chunk -> chunk.text end)
+      Enum.reduce(splits, {[], []}, fn split, {final_chunks, current_splits} ->
+        current_texts = Enum.map(current_splits, & &1.text)
 
         bigger_than_chunk? =
           splits_bigger_than_chunk?(
-            split_chunk.text,
+            split.text,
             current_texts,
             current_separator,
             chunk_size,
@@ -181,17 +187,17 @@ defmodule TextChunker.Strategies.RecursiveChunk do
 
           chunk_start_pos =
             case current_splits do
-              [first_chunk | _] -> first_chunk.start_byte
-              [] -> split_chunk.start_byte
+              [first_split | _] -> first_split.start_byte
+              [] -> split.start_byte
             end
 
           # Calculate overlap for next chunk, ensuring room for the new split
           overlap_splits =
-            reduce_chunk_size_with_positions(
+            trim_splits_for_overlap(
               current_splits,
               chunk_overlap,
               chunk_size,
-              split_chunk.text,
+              split.text,
               get_chunk_size,
               current_separator
             )
@@ -202,11 +208,11 @@ defmodule TextChunker.Strategies.RecursiveChunk do
             text: chunk_text
           }
 
-          new_current_splits = overlap_splits ++ [split_chunk]
+          new_current_splits = overlap_splits ++ [split]
 
           {final_chunks ++ [final_chunk], new_current_splits}
         else
-          {final_chunks, current_splits ++ [split_chunk]}
+          {final_chunks, current_splits ++ [split]}
         end
       end)
 
@@ -217,11 +223,11 @@ defmodule TextChunker.Strategies.RecursiveChunk do
           nil
 
         _ ->
-          chunk_text = join_splits(Enum.map(current_splits, fn chunk -> chunk.text end), current_separator)
+          chunk_text = join_splits(Enum.map(current_splits, & &1.text), current_separator)
 
           chunk_start_pos =
             case current_splits do
-              [first_chunk | _] -> first_chunk.start_byte
+              [first_split | _] -> first_split.start_byte
               [] -> 0
             end
 
@@ -250,22 +256,14 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     if String.equivalent?(result, ""), do: nil, else: result
   end
 
-  # Position-aware version of reduce_chunk_size that handles overlap calculation
+  # Trims splits kept for the overlap of the next chunk.
   # Drops splits from the front until:
   # 1. remaining size <= chunk_overlap, AND
   # 2. there's room to add next_split_text without exceeding chunk_size
-  defp reduce_chunk_size_with_positions([], _chunk_overlap, _chunk_size, _next_split_text, _get_chunk_size, _separator),
-    do: []
+  defp trim_splits_for_overlap([], _chunk_overlap, _chunk_size, _next_split_text, _get_chunk_size, _separator), do: []
 
-  defp reduce_chunk_size_with_positions(
-         current_splits,
-         chunk_overlap,
-         chunk_size,
-         next_split_text,
-         get_chunk_size,
-         separator
-       ) do
-    current_texts = Enum.map(current_splits, fn chunk -> chunk.text end)
+  defp trim_splits_for_overlap(current_splits, chunk_overlap, chunk_size, next_split_text, get_chunk_size, separator) do
+    current_texts = Enum.map(current_splits, & &1.text)
     merged = join_splits(current_texts, separator)
     current_size = get_chunk_size.(merged || "")
 
@@ -277,8 +275,8 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     # - size exceeds overlap limit, OR
     # - adding the next split would exceed chunk_size (and there's something to remove)
     if current_size > chunk_overlap or (size_with_next > chunk_size and current_size > 0) do
-      [_first_chunk | rest] = current_splits
-      reduce_chunk_size_with_positions(rest, chunk_overlap, chunk_size, next_split_text, get_chunk_size, separator)
+      [_first_split | rest] = current_splits
+      trim_splits_for_overlap(rest, chunk_overlap, chunk_size, next_split_text, get_chunk_size, separator)
     else
       current_splits
     end
@@ -290,22 +288,22 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     Regex.split(regex, text, trim: true)
   end
 
-  defp get_splits_with_positions(%Chunk{} = chunk, separator) do
-    splits = split_on_separator(separator, chunk)
+  defp get_splits_with_positions(%Chunk{} = parent_split, separator) do
+    split_texts = split_on_separator(separator, parent_split)
 
-    {chunk_splits, _} =
-      Enum.reduce(splits, {[], chunk.start_byte}, fn split, {acc, current_offset} ->
-        new_chunk = %Chunk{
+    {splits, _} =
+      Enum.reduce(split_texts, {[], parent_split.start_byte}, fn split_text, {acc, current_offset} ->
+        split = %Chunk{
           start_byte: current_offset,
-          end_byte: current_offset + byte_size(split),
-          text: split
+          end_byte: current_offset + byte_size(split_text),
+          text: split_text
         }
 
-        next_offset = current_offset + byte_size(split)
-        {[new_chunk | acc], next_offset}
+        next_offset = current_offset + byte_size(split_text)
+        {[split | acc], next_offset}
       end)
 
-    Enum.reverse(chunk_splits)
+    Enum.reverse(splits)
   end
 
   defp create_fallback_chunks(%Chunk{text: text, start_byte: start_byte}, chunk_size, chunk_overlap, get_chunk_size) do
