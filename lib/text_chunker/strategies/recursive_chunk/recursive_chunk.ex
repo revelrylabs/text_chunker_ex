@@ -133,17 +133,10 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   end
 
   ### **Chunk Assembly:**
-  defp merge_good_splits_into_final_chunks(
-         good_splits,
-         final_chunks,
-         chunk_size,
-         chunk_overlap,
-         get_chunk_size,
-         separator \\ ""
-       ) do
+  defp merge_good_splits_into_final_chunks(good_splits, final_chunks, chunk_size, chunk_overlap, get_chunk_size) do
     case good_splits do
       [] -> final_chunks
-      _ -> final_chunks ++ merge_splits_into_chunks(good_splits, chunk_size, chunk_overlap, get_chunk_size, separator)
+      _ -> final_chunks ++ merge_splits_into_chunks(good_splits, chunk_size, chunk_overlap, get_chunk_size)
     end
   end
 
@@ -166,119 +159,71 @@ defmodule TextChunker.Strategies.RecursiveChunk do
 
   defp fits_in_chunk?(%Chunk{text: text}, max_chunk_size, get_chunk_size), do: get_chunk_size.(text) <= max_chunk_size
 
-  # Merges splits into chunks that respect chunk_size, adding the overlap between chunks
-  defp merge_splits_into_chunks(splits, chunk_size, chunk_overlap, get_chunk_size, current_separator) do
-    {final_chunks, current_splits} =
-      Enum.reduce(splits, {[], []}, fn split, {final_chunks, current_splits} ->
-        current_texts = Enum.map(current_splits, & &1.text)
+  # Merges splits into chunks that respect chunk_size, adding the overlap between chunks.
+  #
+  # Each split is measured once and chunk boundaries are decided on a running
+  # sum of those sizes. Each flushed chunk is re-measured before it is emitted.
+  defp merge_splits_into_chunks(splits, chunk_size, chunk_overlap, get_chunk_size) do
+    {final_chunks, current_splits, _current_size} =
+      Enum.reduce(splits, {[], [], 0}, fn split, {final_chunks, current_splits, current_size} ->
+        split_size = get_chunk_size.(split.text)
 
-        bigger_than_chunk? =
-          splits_bigger_than_chunk?(
-            split.text,
-            current_texts,
-            current_separator,
-            chunk_size,
-            get_chunk_size
-          )
+        if current_size + split_size > chunk_size and !Enum.empty?(current_splits) do
+          chunk = build_chunk(current_splits)
 
-        if bigger_than_chunk? and !Enum.empty?(current_splits) do
-          # Create chunk from current_splits
-          chunk_text = join_splits(current_texts, current_separator)
+          if get_chunk_size.(chunk.text) > chunk_size do
+            # The overlap is dropped so start bytes stay monotonic.
+            fallback_chunks = create_fallback_chunks(chunk, chunk_size, chunk_overlap, get_chunk_size)
+            {final_chunks ++ fallback_chunks, [{split, split_size}], split_size}
+          else
+            # Calculate overlap for next chunk, ensuring room for the new split
+            {overlap_splits, overlap_size} =
+              trim_splits_for_overlap(current_splits, current_size, chunk_overlap, chunk_size, split_size)
 
-          chunk_start_pos =
-            case current_splits do
-              [first_split | _] -> first_split.start_byte
-              [] -> split.start_byte
-            end
-
-          # Calculate overlap for next chunk, ensuring room for the new split
-          overlap_splits =
-            trim_splits_for_overlap(
-              current_splits,
-              chunk_overlap,
-              chunk_size,
-              split.text,
-              get_chunk_size,
-              current_separator
-            )
-
-          final_chunk = %Chunk{
-            start_byte: chunk_start_pos,
-            end_byte: chunk_start_pos + byte_size(chunk_text),
-            text: chunk_text
-          }
-
-          new_current_splits = overlap_splits ++ [split]
-
-          {final_chunks ++ [final_chunk], new_current_splits}
+            {final_chunks ++ [chunk], overlap_splits ++ [{split, split_size}], overlap_size + split_size}
+          end
         else
-          {final_chunks, current_splits ++ [split]}
+          {final_chunks, current_splits ++ [{split, split_size}], current_size + split_size}
         end
       end)
 
     # Handle leftover splits
-    leftover_chunk =
-      case current_splits do
-        [] ->
-          nil
+    case current_splits do
+      [] ->
+        final_chunks
 
-        _ ->
-          chunk_text = join_splits(Enum.map(current_splits, & &1.text), current_separator)
-
-          chunk_start_pos =
-            case current_splits do
-              [first_split | _] -> first_split.start_byte
-              [] -> 0
-            end
-
-          %Chunk{
-            start_byte: chunk_start_pos,
-            end_byte: chunk_start_pos + byte_size(chunk_text),
-            text: chunk_text
-          }
-      end
-
-    case leftover_chunk do
-      nil -> final_chunks
-      chunk -> final_chunks ++ [chunk]
+      _ ->
+        final_chunks ++ create_fallback_chunks(build_chunk(current_splits), chunk_size, chunk_overlap, get_chunk_size)
     end
   end
 
-  # Checks if adding split_text to current_splits would exceed chunk_size
-  defp splits_bigger_than_chunk?(split_text, current_splits_texts, separator, chunk_size, get_chunk_size) do
-    merged = join_splits(current_splits_texts ++ [split_text], separator)
-    get_chunk_size.(merged || "") > chunk_size
-  end
+  defp build_chunk([{first_split, _size} | _] = current_splits) do
+    chunk_text = Enum.map_join(current_splits, fn {split, _size} -> split.text end)
 
-  # Using the given separator, joins the strings in the array current_splits together
-  defp join_splits(current_splits, separator) do
-    result = Enum.join(current_splits, separator)
-    if String.equivalent?(result, ""), do: nil, else: result
+    %Chunk{
+      start_byte: first_split.start_byte,
+      end_byte: first_split.start_byte + byte_size(chunk_text),
+      text: chunk_text
+    }
   end
 
   # Trims splits kept for the overlap of the next chunk.
   # Drops splits from the front until:
   # 1. remaining size <= chunk_overlap, AND
-  # 2. there's room to add next_split_text without exceeding chunk_size
-  defp trim_splits_for_overlap([], _chunk_overlap, _chunk_size, _next_split_text, _get_chunk_size, _separator), do: []
+  # 2. there's room to add the next split without exceeding chunk_size
+  defp trim_splits_for_overlap([], _current_size, _chunk_overlap, _chunk_size, _next_split_size), do: {[], 0}
 
-  defp trim_splits_for_overlap(current_splits, chunk_overlap, chunk_size, next_split_text, get_chunk_size, separator) do
-    current_texts = Enum.map(current_splits, & &1.text)
-    merged = join_splits(current_texts, separator)
-    current_size = get_chunk_size.(merged || "")
-
-    # Check if adding the next split would exceed chunk_size
-    merged_with_next = join_splits(current_texts ++ [next_split_text], separator)
-    size_with_next = get_chunk_size.(merged_with_next || "")
-
-    # Reduce if:
-    # - size exceeds overlap limit, OR
-    # - adding the next split would exceed chunk_size (and there's something to remove)
-    if current_size > chunk_overlap or (size_with_next > chunk_size and current_size > 0) do
-      [_first_split | rest] = current_splits
-      trim_splits_for_overlap(rest, chunk_overlap, chunk_size, next_split_text, get_chunk_size, separator)
+  defp trim_splits_for_overlap(
+         [{_first_split, first_size} | rest] = current_splits,
+         current_size,
+         chunk_overlap,
+         chunk_size,
+         next_split_size
+       ) do
+    if current_size > chunk_overlap or (current_size + next_split_size > chunk_size and current_size > 0) do
+      trim_splits_for_overlap(rest, current_size - first_size, chunk_overlap, chunk_size, next_split_size)
     else
-      current_splits
+      {current_splits, current_size}
     end
   end
 
