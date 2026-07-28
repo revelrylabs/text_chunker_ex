@@ -97,7 +97,9 @@ defmodule TextChunker.Strategies.RecursiveChunk do
               )
 
             if get_chunk_size.(split.text) > chunk_size do
-              fallback_chunks = create_fallback_chunks(split, chunk_size, chunk_overlap, get_chunk_size)
+              fallback_chunks =
+                fallback_splitter(split.text, split.start_byte, chunk_size, chunk_overlap, get_chunk_size, [])
+
               {final_chunks ++ fallback_chunks, []}
             else
               {final_chunks ++ [split], []}
@@ -172,11 +174,14 @@ defmodule TextChunker.Strategies.RecursiveChunk do
           chunk = build_chunk(current_splits)
 
           if get_chunk_size.(chunk.text) > chunk_size do
-            # The overlap is dropped so start bytes stay monotonic.
-            fallback_chunks = create_fallback_chunks(chunk, chunk_size, chunk_overlap, get_chunk_size)
+            fallback_chunks =
+              fallback_splitter(chunk.text, chunk.start_byte, chunk_size, chunk_overlap, get_chunk_size, [])
+
+            # No overlap is carried into the next chunk here: the fallback chunks
+            # already cover the end of `chunk`, so keeping earlier splits would
+            # make the next chunk's start_byte go backwards.
             {final_chunks ++ fallback_chunks, [{split, split_size}], split_size}
           else
-            # Calculate overlap for next chunk, ensuring room for the new split
             {overlap_splits, overlap_size} =
               trim_splits_for_overlap(current_splits, current_size, chunk_overlap, chunk_size, split_size)
 
@@ -251,6 +256,10 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     Enum.reverse(splits)
   end
 
+  # Fallback chunking: the last resort for text that exceeds chunk_size but can
+  # no longer be split on a separator. fallback_splitter/6 slices the text by
+  # character count, binary-searching for the largest prefix that fits within
+  # chunk_size, and keeps chunk_overlap between consecutive slices.
   defp create_fallback_chunks(%Chunk{text: text, start_byte: start_byte}, chunk_size, chunk_overlap, get_chunk_size) do
     text_size = get_chunk_size.(text)
 
