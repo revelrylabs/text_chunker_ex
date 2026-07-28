@@ -248,6 +248,35 @@ defmodule TextChunkerTest do
       end
     end
 
+    test "the merge loop does not re-measure accumulated text on every step" do
+      # Guards the incremental size tracking in merge_splits_into_chunks: each
+      # split is measured once and chunk boundaries are decided on a running
+      # sum. Re-measuring the accumulated text on every merge step would put
+      # ~190x the input length through get_chunk_size for this text, versus
+      # ~3x with incremental tracking.
+      {:ok, agent} = Agent.start_link(fn -> 0 end)
+
+      measuring_sizer = fn text ->
+        Agent.update(agent, &(&1 + String.length(text)))
+        String.length(text)
+      end
+
+      text = Enum.map_join(1..2000, " ", fn i -> "word#{i}" end)
+
+      TextChunker.split(text,
+        chunk_size: 1000,
+        chunk_overlap: 100,
+        format: :plaintext,
+        get_chunk_size: measuring_sizer
+      )
+
+      total_measured = Agent.get(agent, & &1)
+
+      assert total_measured <= String.length(text) * 10,
+             "get_chunk_size measured #{total_measured} chars for a " <>
+               "#{String.length(text)}-char input; expected at most 10x"
+    end
+
     test "splits text into chunks with lengths that match the original file" do
       {:ok, text} = File.read("test/support/fixtures/document_fixtures/hamlet.txt")
 
