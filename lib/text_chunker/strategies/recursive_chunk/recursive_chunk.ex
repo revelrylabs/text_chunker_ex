@@ -249,19 +249,18 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   defp get_splits_with_positions(%Chunk{} = parent_split, separator) do
     split_texts = split_on_separator(separator, parent_split)
 
-    {splits, _} =
-      Enum.reduce(split_texts, {[], parent_split.start_byte}, fn split_text, {acc, current_offset} ->
+    {splits, _final_offset} =
+      Enum.map_reduce(split_texts, parent_split.start_byte, fn split_text, offset ->
         split = %Chunk{
-          start_byte: current_offset,
-          end_byte: current_offset + byte_size(split_text),
+          start_byte: offset,
+          end_byte: offset + byte_size(split_text),
           text: split_text
         }
 
-        next_offset = current_offset + byte_size(split_text)
-        {[acc, split], next_offset}
+        {split, offset + byte_size(split_text)}
       end)
 
-    List.flatten(splits)
+    splits
   end
 
   # Fallback chunking: the last resort for text that exceeds chunk_size but can
