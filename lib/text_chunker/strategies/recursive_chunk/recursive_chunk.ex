@@ -76,23 +76,21 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   end
 
   # **Recursive Splitting:**
-  #
-  # rev_-prefixed accumulators are built newest-first and reversed when consumed.
   defp perform_split(%Chunk{} = parent_split, separators, chunk_size, chunk_overlap, get_chunk_size) do
     {current_separator, remaining_separators} = get_active_separator(separators, parent_split)
     splits_with_positions = get_splits_with_positions(parent_split, current_separator)
 
-    {rev_final_chunks, rev_good_splits} =
-      Enum.reduce(splits_with_positions, {[], []}, fn split, {rev_final_chunks, rev_good_splits} ->
+    {reverse_final_chunks, reverse_good_splits} =
+      Enum.reduce(splits_with_positions, {[], []}, fn split, {reverse_final_chunks, reverse_good_splits} ->
         cond do
           fits_in_chunk?(split, chunk_size, get_chunk_size) ->
-            {rev_final_chunks, [split | rev_good_splits]}
+            {reverse_final_chunks, [split | reverse_good_splits]}
 
           Enum.empty?(remaining_separators) ->
-            rev_final_chunks =
+            reverse_final_chunks =
               merge_good_splits_into_final_chunks(
-                rev_good_splits,
-                rev_final_chunks,
+                reverse_good_splits,
+                reverse_final_chunks,
                 chunk_size,
                 chunk_overlap,
                 get_chunk_size
@@ -102,16 +100,16 @@ defmodule TextChunker.Strategies.RecursiveChunk do
               fallback_chunks =
                 fallback_splitter(split.text, split.start_byte, chunk_size, chunk_overlap, get_chunk_size, [])
 
-              {Enum.reverse(fallback_chunks, rev_final_chunks), []}
+              {Enum.reverse(fallback_chunks, reverse_final_chunks), []}
             else
-              {[split | rev_final_chunks], []}
+              {[split | reverse_final_chunks], []}
             end
 
           true ->
-            rev_final_chunks =
+            reverse_final_chunks =
               merge_good_splits_into_final_chunks(
-                rev_good_splits,
-                rev_final_chunks,
+                reverse_good_splits,
+                reverse_final_chunks,
                 chunk_size,
                 chunk_overlap,
                 get_chunk_size
@@ -120,26 +118,32 @@ defmodule TextChunker.Strategies.RecursiveChunk do
             more_chunks =
               perform_split(split, remaining_separators, chunk_size, chunk_overlap, get_chunk_size)
 
-            {Enum.reverse(more_chunks, rev_final_chunks), []}
+            {Enum.reverse(more_chunks, reverse_final_chunks), []}
         end
       end)
 
-    rev_good_splits
-    |> merge_good_splits_into_final_chunks(rev_final_chunks, chunk_size, chunk_overlap, get_chunk_size)
+    reverse_good_splits
+    |> merge_good_splits_into_final_chunks(reverse_final_chunks, chunk_size, chunk_overlap, get_chunk_size)
     |> Enum.reverse()
   end
 
   ### **Chunk Assembly:**
-  defp merge_good_splits_into_final_chunks(rev_good_splits, rev_final_chunks, chunk_size, chunk_overlap, get_chunk_size) do
-    case rev_good_splits do
+  defp merge_good_splits_into_final_chunks(
+         reverse_good_splits,
+         reverse_final_chunks,
+         chunk_size,
+         chunk_overlap,
+         get_chunk_size
+       ) do
+    case reverse_good_splits do
       [] ->
-        rev_final_chunks
+        reverse_final_chunks
 
       _ ->
-        rev_good_splits
+        reverse_good_splits
         |> Enum.reverse()
         |> merge_splits_into_chunks(chunk_size, chunk_overlap, get_chunk_size)
-        |> Enum.reverse(rev_final_chunks)
+        |> Enum.reverse(reverse_final_chunks)
     end
   end
 
@@ -167,12 +171,12 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   # Each split is measured once and chunk boundaries are decided on a running
   # sum of those sizes. Each flushed chunk is re-measured before it is emitted.
   defp merge_splits_into_chunks(splits, chunk_size, chunk_overlap, get_chunk_size) do
-    {rev_final_chunks, rev_current_splits, _current_size} =
-      Enum.reduce(splits, {[], [], 0}, fn split, {rev_final_chunks, rev_current_splits, current_size} ->
+    {reverse_final_chunks, reverse_current_splits, _current_size} =
+      Enum.reduce(splits, {[], [], 0}, fn split, {reverse_final_chunks, reverse_current_splits, current_size} ->
         split_size = get_chunk_size.(split.text)
 
-        if current_size + split_size > chunk_size and !Enum.empty?(rev_current_splits) do
-          current_splits = Enum.reverse(rev_current_splits)
+        if current_size + split_size > chunk_size and !Enum.empty?(reverse_current_splits) do
+          current_splits = Enum.reverse(reverse_current_splits)
           chunk = build_chunk(current_splits)
 
           if get_chunk_size.(chunk.text) > chunk_size do
@@ -182,33 +186,34 @@ defmodule TextChunker.Strategies.RecursiveChunk do
             # No overlap is carried into the next chunk here: the fallback chunks
             # already cover the end of `chunk`, so keeping earlier splits would
             # make the next chunk's start_byte go backwards.
-            {Enum.reverse(fallback_chunks, rev_final_chunks), [{split, split_size}], split_size}
+            {Enum.reverse(fallback_chunks, reverse_final_chunks), [{split, split_size}], split_size}
           else
             {overlap_splits, overlap_size} =
               trim_splits_for_overlap(current_splits, current_size, chunk_overlap, chunk_size, split_size)
 
-            {[chunk | rev_final_chunks], [{split, split_size} | Enum.reverse(overlap_splits)], overlap_size + split_size}
+            {[chunk | reverse_final_chunks], [{split, split_size} | Enum.reverse(overlap_splits)],
+             overlap_size + split_size}
           end
         else
-          {rev_final_chunks, [{split, split_size} | rev_current_splits], current_size + split_size}
+          {reverse_final_chunks, [{split, split_size} | reverse_current_splits], current_size + split_size}
         end
       end)
 
     # Handle leftover splits
-    rev_final_chunks =
-      case rev_current_splits do
+    reverse_final_chunks =
+      case reverse_current_splits do
         [] ->
-          rev_final_chunks
+          reverse_final_chunks
 
         _ ->
-          rev_current_splits
+          reverse_current_splits
           |> Enum.reverse()
           |> build_chunk()
           |> create_fallback_chunks(chunk_size, chunk_overlap, get_chunk_size)
-          |> Enum.reverse(rev_final_chunks)
+          |> Enum.reverse(reverse_final_chunks)
       end
 
-    Enum.reverse(rev_final_chunks)
+    Enum.reverse(reverse_final_chunks)
   end
 
   defp build_chunk([{first_split, _size} | _] = current_splits) do
