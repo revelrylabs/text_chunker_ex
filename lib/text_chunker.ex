@@ -87,9 +87,6 @@ defmodule TextChunker do
     end
   end
 
-  # Matches LangChain's validation boundary: overlap greater than size is
-  # rejected; overlap equal to size is allowed and degrades the same way
-  # LangChain does (maximal overlap between consecutive chunks).
   defp validate_overlap_not_greater_than_size(args) do
     if args[:chunk_overlap] <= args[:chunk_size] do
       :ok
