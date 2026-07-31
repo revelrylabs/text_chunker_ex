@@ -11,7 +11,7 @@ defmodule TextChunker do
   **Supported Options**
   * `:chunk_size` (positive integer, default: 2000) - Maximum size in token length for each chunk.
   * `:get_chunk_size` (function, default: &String.length/1) - A function that returns the number of tokens in a chunk, by default the number of graphemes.
-  * `:chunk_overlap` (non-negative integer, default: 200) - Number of overlapping tokens between consecutive chunks to preserve context. Must be less than `:chunk_size`.
+  * `:chunk_overlap` (non-negative integer, default: 200) - Number of overlapping tokens between consecutive chunks to preserve context. Must not be greater than `:chunk_size`.
   * `:strategy` (module default: `RecursiveChunk`) - A module implementing the split function. Currently only `RecursiveChunk` is supported.
   * `:format` (atom, default: `:plaintext`) - The format of the input text. Used to determine where to split the text in some strategies.
   """
@@ -79,7 +79,7 @@ defmodule TextChunker do
     opts = Keyword.merge(@default_opts, opts)
 
     with {:ok, args} <- NimbleOptions.validate(opts, @opts_schema),
-         :ok <- validate_overlap_less_than_size(args) do
+         :ok <- validate_overlap_not_greater_than_size(args) do
       args[:strategy].split(text, args)
     else
       {:error, %NimbleOptions.ValidationError{message: message}} -> {:error, message}
@@ -87,12 +87,15 @@ defmodule TextChunker do
     end
   end
 
-  defp validate_overlap_less_than_size(args) do
-    if args[:chunk_overlap] < args[:chunk_size] do
+  # Matches LangChain's validation boundary: overlap greater than size is
+  # rejected; overlap equal to size is allowed and degrades the same way
+  # LangChain does (maximal overlap between consecutive chunks).
+  defp validate_overlap_not_greater_than_size(args) do
+    if args[:chunk_overlap] <= args[:chunk_size] do
       :ok
     else
       {:error,
-       "invalid value for :chunk_overlap option: must be less than :chunk_size (#{args[:chunk_size]}), got: #{args[:chunk_overlap]}"}
+       "invalid value for :chunk_overlap option: must not be greater than :chunk_size (#{args[:chunk_size]}), got: #{args[:chunk_overlap]}"}
     end
   end
 end

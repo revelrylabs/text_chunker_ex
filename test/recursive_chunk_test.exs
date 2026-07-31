@@ -695,16 +695,6 @@ defmodule TextChunkerTest do
       assert result == {:error, "invalid value for :chunk_size option: expected positive integer, got: 0"}
     end
 
-    test "rejects a chunk_overlap equal to chunk_size" do
-      opts = [
-        chunk_size: 10,
-        chunk_overlap: 10
-      ]
-
-      result = TextChunker.split("this should fail", opts)
-      assert result == {:error, "invalid value for :chunk_overlap option: must be less than :chunk_size (10), got: 10"}
-    end
-
     test "rejects a chunk_overlap greater than chunk_size" do
       opts = [
         chunk_size: 10,
@@ -712,7 +702,14 @@ defmodule TextChunkerTest do
       ]
 
       result = TextChunker.split("this should fail", opts)
-      assert result == {:error, "invalid value for :chunk_overlap option: must be less than :chunk_size (10), got: 11"}
+
+      assert result ==
+               {:error, "invalid value for :chunk_overlap option: must not be greater than :chunk_size (10), got: 11"}
+    end
+
+    test "accepts a chunk_overlap equal to chunk_size, like LangChain" do
+      result = TextChunker.split("this should not fail", chunk_size: 10, chunk_overlap: 10)
+      assert is_list(result)
     end
 
     test "accepts a chunk_overlap of 0" do
