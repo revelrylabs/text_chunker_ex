@@ -3,8 +3,6 @@ defmodule TextChunkerTest do
 
   alias TextChunker.TestHelpers
 
-  @moduletag timeout: :infinity
-
   describe "chunker with plaintext separators" do
     test "splits multiple sentences correctly" do
       opts = [
@@ -697,6 +695,31 @@ defmodule TextChunkerTest do
       assert result == {:error, "invalid value for :chunk_size option: expected positive integer, got: 0"}
     end
 
+    test "rejects a chunk_overlap equal to chunk_size" do
+      opts = [
+        chunk_size: 10,
+        chunk_overlap: 10
+      ]
+
+      result = TextChunker.split("this should fail", opts)
+      assert result == {:error, "invalid value for :chunk_overlap option: must be less than :chunk_size (10), got: 10"}
+    end
+
+    test "rejects a chunk_overlap greater than chunk_size" do
+      opts = [
+        chunk_size: 10,
+        chunk_overlap: 11
+      ]
+
+      result = TextChunker.split("this should fail", opts)
+      assert result == {:error, "invalid value for :chunk_overlap option: must be less than :chunk_size (10), got: 11"}
+    end
+
+    test "accepts a chunk_overlap of 0" do
+      result = TextChunker.split("this should not fail", chunk_size: 10, chunk_overlap: 0)
+      assert is_list(result)
+    end
+
     test "rejects an unsupported format" do
       opts = [
         format: :made_up_format
@@ -925,7 +948,7 @@ defmodule TextChunkerTest do
       chunk_size = 10
 
       Enum.map(@supported_formats, fn format ->
-        chunks = TextChunker.split(@non_matching_text, chunk_size: chunk_size, format: format)
+        chunks = TextChunker.split(@non_matching_text, chunk_size: chunk_size, chunk_overlap: 2, format: format)
 
         Enum.map(chunks, fn chunk ->
           assert byte_size(chunk.text) <= chunk_size,
@@ -938,7 +961,7 @@ defmodule TextChunkerTest do
       long_word = "supercalifragilisticexpialidocious"
 
       Enum.map(@supported_formats, fn format ->
-        chunks = TextChunker.split(long_word, chunk_size: 10, format: format)
+        chunks = TextChunker.split(long_word, chunk_size: 10, chunk_overlap: 2, format: format)
 
         Enum.map(chunks, fn chunk ->
           assert byte_size(chunk.text) <= 10
@@ -953,13 +976,13 @@ defmodule TextChunkerTest do
 
     test "format-specific separators take precedence over fallback" do
       markdown_text = "## Header\nContent here\n### Subheader\nMore content"
-      chunks = TextChunker.split(markdown_text, chunk_size: 30, format: :markdown)
+      chunks = TextChunker.split(markdown_text, chunk_size: 30, chunk_overlap: 5, format: :markdown)
 
       chunk_texts = Enum.map(chunks, & &1.text)
       assert Enum.any?(chunk_texts, &String.starts_with?(&1, "## Header"))
 
       python_text = "class Test:\n    def method(self):\n        return 'test'"
-      chunks = TextChunker.split(python_text, chunk_size: 30, format: :python)
+      chunks = TextChunker.split(python_text, chunk_size: 30, chunk_overlap: 5, format: :python)
 
       chunk_texts = Enum.map(chunks, & &1.text)
       assert Enum.any?(chunk_texts, &String.contains?(&1, "class Test:"))
@@ -970,13 +993,13 @@ defmodule TextChunkerTest do
 
       baseline_chunks =
         @non_matching_text
-        |> TextChunker.split(chunk_size: 15, format: :plaintext)
+        |> TextChunker.split(chunk_size: 15, chunk_overlap: 3, format: :plaintext)
         |> TestHelpers.extract_text_from_chunks()
 
       Enum.map(plaintext_formats, fn format ->
         chunks =
           @non_matching_text
-          |> TextChunker.split(chunk_size: 15, format: format)
+          |> TextChunker.split(chunk_size: 15, chunk_overlap: 3, format: format)
           |> TestHelpers.extract_text_from_chunks()
 
         assert chunks == baseline_chunks,
