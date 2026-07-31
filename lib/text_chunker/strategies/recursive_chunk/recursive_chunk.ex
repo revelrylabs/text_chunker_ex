@@ -241,32 +241,10 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     end
   end
 
-  # Splits text immediately before every occurrence of the separator, keeping
-  # the separator attached to the split that follows it. Occurrences may
-  # overlap: "\n\n" splits "\n\n\n" at two positions.
   defp split_on_separator(separator, %Chunk{text: text}) do
-    boundaries = Enum.dedup([0 | separator_positions(text, separator, 0, [])])
-
-    boundaries
-    |> split_at_boundaries(text)
-    |> Enum.reject(&(&1 == ""))
-  end
-
-  # Byte offsets of every (possibly overlapping) occurrence of separator:
-  # resume the search one byte past each match position, not past the match.
-  defp separator_positions(text, separator, offset, acc) when offset < byte_size(text) do
-    case :binary.match(text, separator, scope: {offset, byte_size(text) - offset}) do
-      :nomatch -> Enum.reverse(acc)
-      {pos, _len} -> separator_positions(text, separator, pos + 1, [pos | acc])
-    end
-  end
-
-  defp separator_positions(_text, _separator, _offset, acc), do: Enum.reverse(acc)
-
-  defp split_at_boundaries([from], text), do: [binary_part(text, from, byte_size(text) - from)]
-
-  defp split_at_boundaries([from, next | rest], text) do
-    [binary_part(text, from, next - from) | split_at_boundaries([next | rest], text)]
+    escaped_separator = Regex.escape(separator)
+    regex = Regex.compile!("(?=#{escaped_separator})", [:unicode])
+    Regex.split(regex, text, trim: true)
   end
 
   defp get_splits_with_positions(%Chunk{} = parent_split, separator) do
