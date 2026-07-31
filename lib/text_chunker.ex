@@ -11,7 +11,7 @@ defmodule TextChunker do
   **Supported Options**
   * `:chunk_size` (positive integer, default: 2000) - Maximum size in token length for each chunk.
   * `:get_chunk_size` (function, default: &String.length/1) - A function that returns the number of tokens in a chunk, by default the number of graphemes.
-  * `:chunk_overlap` (non-negative integer, default: 200) - Number of overlapping tokens between consecutive chunks to preserve context.
+  * `:chunk_overlap` (non-negative integer, default: 200) - Number of overlapping tokens between consecutive chunks to preserve context. Must not be greater than `:chunk_size`.
   * `:strategy` (module default: `RecursiveChunk`) - A module implementing the split function. Currently only `RecursiveChunk` is supported.
   * `:format` (atom, default: `:plaintext`) - The format of the input text. Used to determine where to split the text in some strategies.
   """
@@ -78,12 +78,21 @@ defmodule TextChunker do
   def split(text, opts \\ []) do
     opts = Keyword.merge(@default_opts, opts)
 
-    case NimbleOptions.validate(opts, @opts_schema) do
-      {:ok, args} ->
-        opts[:strategy].split(text, args)
+    with {:ok, args} <- NimbleOptions.validate(opts, @opts_schema),
+         :ok <- validate_overlap_not_greater_than_size(args) do
+      args[:strategy].split(text, args)
+    else
+      {:error, %NimbleOptions.ValidationError{message: message}} -> {:error, message}
+      {:error, message} -> {:error, message}
+    end
+  end
 
-      {:error, %NimbleOptions.ValidationError{message: message}} ->
-        {:error, message}
+  defp validate_overlap_not_greater_than_size(args) do
+    if args[:chunk_overlap] <= args[:chunk_size] do
+      :ok
+    else
+      {:error,
+       "invalid value for :chunk_overlap option: must not be greater than :chunk_size (#{args[:chunk_size]}), got: #{args[:chunk_overlap]}"}
     end
   end
 end
