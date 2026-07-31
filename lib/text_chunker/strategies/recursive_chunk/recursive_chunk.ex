@@ -10,6 +10,9 @@ defmodule TextChunker.Strategies.RecursiveChunk do
 
   Both are represented by `%TextChunker.Chunk{}` structs internally; the names refer to their role in the algorithm.
 
+  Throughout the implementation, `reverse_`-prefixed variables are accumulators built newest-first and
+  `Enum.reverse`d when consumed, keeping chunk assembly linear in the number of chunks.
+
   **Key Features:**
 
   * **Size-Guided Chunking:** Prioritizes splitting text into semantic blocks while respecting the maximum `chunk_size`.
