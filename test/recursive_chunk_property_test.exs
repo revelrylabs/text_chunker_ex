@@ -179,6 +179,22 @@ defmodule TextChunker.RecursiveChunkPropertyTest do
     end
   end
 
+  property "consecutive chunks overlap by no more than chunk_overlap" do
+    check all(text <- input_text(), opts <- chunk_opts()) do
+      text
+      |> TextChunker.split(opts)
+      |> Enum.chunk_every(2, 1, :discard)
+      |> Enum.each(fn [previous, current] ->
+        overlap_bytes = max(previous.end_byte - current.start_byte, 0)
+        overlap_text = binary_part(text, current.start_byte, overlap_bytes)
+
+        assert String.length(overlap_text) <= opts[:chunk_overlap],
+               "chunks share #{inspect(overlap_text)}, more than chunk_overlap " <>
+                 "#{opts[:chunk_overlap]}: #{inspect(previous)} is followed by #{inspect(current)}"
+      end)
+    end
+  end
+
   property "chunk boundaries never split a grapheme, except a CRLF pair" do
     check all(text <- grapheme_safe_text(), opts <- chunk_opts()) do
       boundaries =
