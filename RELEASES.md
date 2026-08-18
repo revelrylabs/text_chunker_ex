@@ -2,6 +2,7 @@
 
 ## Preparation
 - [ ] Update the package version in `mix.exs`
+- [ ] Update `CHANGELOG.md`: move Unreleased entries under the new version heading and update the compare links
 - [ ] Update the installation instructions in `README.md`
 - [ ] Update SECURITY.md
 
