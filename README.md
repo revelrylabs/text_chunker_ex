@@ -67,8 +67,10 @@ If you wish to adjust these parameters, configuration can optionally be passed v
   - `chunk_size` (default: `2000`) - The maximum chunk size, as measured by the `get_chunk_size` function. Chunks will not exceed this maximum, but may sometimes be smaller. By default, size is measured in *graphemes* - user-perceived characters, which is what `String.length/1` counts, so `a`, `é`, and `👨‍👩‍👧‍👦` each count as one. Chunks never split a user-visible character down the middle, whichever measure you use (see [Unicode edge cases](#unicode-edge-cases) for two rare exceptions).
   - `chunk_overlap` (default: `200`) - The contextual overlap between chunks, measured the same way as `chunk_size`. Must not be greater than `chunk_size`. Overlap is *not* guaranteed; again this should be treated as a maximum. The size of an individual overlap will depend on the semantics of the text being split.
   - `get_chunk_size` (default: `&String.length/1`) - The function used to measure chunk size. Swap this out to chunk by a different measure - for example, pass a tokenizer's token counter to size chunks by token count.
-  - `format` (default: `:plaintext`) - What informs separator selection. Because we are trying to preserve meaning between the chunks, the format of the text we are splitting is important. It's important to split newlines in plain text; it's important to split `###` headings in markdown.
-  - `strategy` (default: `TextChunker.Strategies.RecursiveChunk`) - The module implementing the chunking strategy. Currently `RecursiveChunk` is the only supported strategy.
+  - `format` (default: `:plaintext`) - What informs separator selection. Because we are trying to preserve meaning between the chunks, the format of the text we are splitting is important. It's important to split newlines in plain text; it's important to split `###` headings in markdown. `TextChunker.supported_formats/0` returns the accepted values.
+  - `strategy` (default: `TextChunker.Strategies.RecursiveChunk`) - The module implementing the chunking strategy. Any module declaring `@behaviour TextChunker.ChunkerBehaviour` and implementing its `split/2` callback is accepted (see [Chunking Strategies](#chunking-strategies)).
+
+Invalid options raise a `TextChunker.Error`. On success, `split/2` always returns a list of chunks (empty if the text produced none).
 
 ```elixir
 text = """
@@ -82,7 +84,20 @@ chunks = TextChunker.split(text, opts)
 
 ### Chunking Strategies
 
-Currently, we only implement one strategy choice: Recursive Chunk. This was reverse-engineered from LangChain, with plans to add more methods in the future. 
+To use your own strategy, declare `@behaviour TextChunker.ChunkerBehaviour` and pass the module as `:strategy`:
+
+```elixir
+defmodule MyApp.SentenceChunker do
+  @behaviour TextChunker.ChunkerBehaviour
+
+  @impl true
+  def split(text, _opts) do
+    [%TextChunker.Chunk{text: text, start_byte: 0, end_byte: byte_size(text)}]
+  end
+end
+
+TextChunker.split(text, strategy: MyApp.SentenceChunker)
+```
 
 #### Recursive Chunk (current default)
 
