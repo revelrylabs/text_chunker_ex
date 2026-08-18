@@ -84,7 +84,7 @@ chunks = TextChunker.split(text, opts)
 
 ### Chunking Strategies
 
-The library ships with one strategy, Recursive Chunk, reverse-engineered from LangChain. To supply your own, declare `@behaviour TextChunker.ChunkerBehaviour` and pass the module as the `:strategy` option:
+To use your own strategy, declare `@behaviour TextChunker.ChunkerBehaviour` and pass the module as :strategy:
 
 ```elixir
 defmodule MyApp.SentenceChunker do
