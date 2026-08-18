@@ -84,7 +84,7 @@ chunks = TextChunker.split(text, opts)
 
 ### Chunking Strategies
 
-To use your own strategy, declare `@behaviour TextChunker.ChunkerBehaviour` and pass the module as :strategy:
+To use your own strategy, declare `@behaviour TextChunker.ChunkerBehaviour` and pass the module as `:strategy`:
 
 ```elixir
 defmodule MyApp.SentenceChunker do
