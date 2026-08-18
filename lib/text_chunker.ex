@@ -93,10 +93,15 @@ defmodule TextChunker do
 
   @doc false
   def validate_strategy(module) when is_atom(module) do
-    if Code.ensure_loaded?(module) and declares_chunker_behaviour?(module) do
-      {:ok, module}
-    else
-      {:error, "must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: #{inspect(module)}"}
+    cond do
+      not (Code.ensure_loaded?(module) and declares_chunker_behaviour?(module)) ->
+        {:error, "must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: #{inspect(module)}"}
+
+      not function_exported?(module, :split, 2) ->
+        {:error, "#{inspect(module)} declares @behaviour TextChunker.ChunkerBehaviour but does not implement split/2"}
+
+      true ->
+        {:ok, module}
     end
   end
 

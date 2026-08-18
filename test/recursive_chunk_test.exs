@@ -9,6 +9,35 @@ defmodule UpcaseStrategy do
   end
 end
 
+defmodule AnotherBehaviour do
+  @moduledoc false
+  @callback foo() :: any()
+end
+
+defmodule MultiBehaviourStrategy do
+  @moduledoc false
+  # AnotherBehaviour is declared first so this test double catches a
+  # validator regression that only inspects the first :behaviour attribute.
+  @behaviour AnotherBehaviour
+  @behaviour TextChunker.ChunkerBehaviour
+
+  @impl AnotherBehaviour
+  def foo, do: :ok
+
+  @impl TextChunker.ChunkerBehaviour
+  def split(text, _opts) do
+    [%TextChunker.Chunk{text: text, start_byte: 0, end_byte: byte_size(text)}]
+  end
+end
+
+defmodule GenServerOnlyModule do
+  @moduledoc false
+  use GenServer
+
+  @impl GenServer
+  def init(arg), do: {:ok, arg}
+end
+
 defmodule TextChunkerTest do
   use ExUnit.Case
 
@@ -739,6 +768,28 @@ defmodule TextChunkerTest do
                    ~s(invalid value for :strategy option: must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: "not a module"),
                    fn -> TextChunker.split("this should fail", strategy: "not a module") end
     end
+
+    test "rejects a module declaring a different behaviour" do
+      assert_raise TextChunker.Error,
+                   "invalid value for :strategy option: must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: GenServerOnlyModule",
+                   fn -> TextChunker.split("this should fail", strategy: GenServerOnlyModule) end
+    end
+
+    test "rejects a module that declares the behaviour but does not implement split/2" do
+      ExUnit.CaptureIO.capture_io(:stderr, fn ->
+        Module.create(
+          DeclaresButDoesNotImplement,
+          quote do
+            @behaviour TextChunker.ChunkerBehaviour
+          end,
+          Macro.Env.location(__ENV__)
+        )
+      end)
+
+      assert_raise TextChunker.Error,
+                   "invalid value for :strategy option: DeclaresButDoesNotImplement declares @behaviour TextChunker.ChunkerBehaviour but does not implement split/2",
+                   fn -> TextChunker.split("this should fail", strategy: DeclaresButDoesNotImplement) end
+    end
   end
 
   describe "custom strategies" do
@@ -750,6 +801,12 @@ defmodule TextChunkerTest do
       assert opts[:chunk_size] == 11
       assert opts[:chunk_overlap] == 0
       assert opts[:format] == :plaintext
+    end
+
+    test "accepts a strategy declaring multiple behaviours" do
+      chunks = TextChunker.split("hello", strategy: MultiBehaviourStrategy, chunk_size: 5, chunk_overlap: 0)
+
+      assert [%TextChunker.Chunk{text: "hello"}] = chunks
     end
   end
 
