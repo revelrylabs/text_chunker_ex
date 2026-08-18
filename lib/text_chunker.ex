@@ -62,6 +62,14 @@ defmodule TextChunker do
   ]
 
   @doc """
+  Returns the list of supported `:format` values.
+
+  Useful for validating a runtime-provided format before calling `split/2`.
+  """
+  @spec supported_formats() :: [atom()]
+  def supported_formats, do: @supported_formats
+
+  @doc """
   Splits the provided text into a list of `%Chunk{}` structs.
 
   Raises `TextChunker.Error` if the options are invalid.

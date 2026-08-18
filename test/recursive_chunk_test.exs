@@ -808,6 +808,18 @@ defmodule TextChunkerTest do
     end
   end
 
+  describe "supported_formats/0" do
+    test "every listed format is accepted by split/2" do
+      formats = TextChunker.supported_formats()
+
+      assert :plaintext in formats
+
+      for format <- formats do
+        assert is_list(TextChunker.split("hello", format: format))
+      end
+    end
+  end
+
   describe "metadata tracking" do
     test "splits long text into multiple chunks with overlap" do
       text = String.duplicate("a", 100)
