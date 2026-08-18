@@ -68,7 +68,9 @@ If you wish to adjust these parameters, configuration can optionally be passed v
   - `chunk_overlap` (default: `200`) - The contextual overlap between chunks, measured the same way as `chunk_size`. Must not be greater than `chunk_size`. Overlap is *not* guaranteed; again this should be treated as a maximum. The size of an individual overlap will depend on the semantics of the text being split.
   - `get_chunk_size` (default: `&String.length/1`) - The function used to measure chunk size. Swap this out to chunk by a different measure - for example, pass a tokenizer's token counter to size chunks by token count.
   - `format` (default: `:plaintext`) - What informs separator selection. Because we are trying to preserve meaning between the chunks, the format of the text we are splitting is important. It's important to split newlines in plain text; it's important to split `###` headings in markdown.
-  - `strategy` (default: `TextChunker.Strategies.RecursiveChunk`) - The module implementing the chunking strategy. Currently `RecursiveChunk` is the only supported strategy.
+  - `strategy` (default: `TextChunker.Strategies.RecursiveChunk`) - The module implementing the chunking strategy. Any module declaring `@behaviour TextChunker.ChunkerBehaviour` is accepted (see [Chunking Strategies](#chunking-strategies)).
+
+Invalid options raise a `TextChunker.Error`. On success, `split/2` always returns a list of chunks (empty if the text produced none).
 
 ```elixir
 text = """
@@ -82,7 +84,20 @@ chunks = TextChunker.split(text, opts)
 
 ### Chunking Strategies
 
-Currently, we only implement one strategy choice: Recursive Chunk. This was reverse-engineered from LangChain, with plans to add more methods in the future. 
+The library ships with one strategy, Recursive Chunk, reverse-engineered from LangChain. To supply your own, declare `@behaviour TextChunker.ChunkerBehaviour` and pass the module as the `:strategy` option:
+
+```elixir
+defmodule MyApp.SentenceChunker do
+  @behaviour TextChunker.ChunkerBehaviour
+
+  @impl true
+  def split(text, opts) do
+    # return a list of %TextChunker.Chunk{} structs
+  end
+end
+
+TextChunker.split(text, strategy: MyApp.SentenceChunker)
+```
 
 #### Recursive Chunk (current default)
 

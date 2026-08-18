@@ -12,13 +12,14 @@ defmodule TextChunker do
   * `:chunk_size` (positive integer, default: 2000) - Maximum size in token length for each chunk.
   * `:get_chunk_size` (function, default: &String.length/1) - A function that returns the number of tokens in a chunk, by default the number of graphemes.
   * `:chunk_overlap` (non-negative integer, default: 200) - Number of overlapping tokens between consecutive chunks to preserve context. Must not be greater than `:chunk_size`.
-  * `:strategy` (module default: `RecursiveChunk`) - A module implementing the split function. Currently only `RecursiveChunk` is supported.
+  * `:strategy` (module, default: `RecursiveChunk`) - A module declaring `@behaviour TextChunker.ChunkerBehaviour`.
   * `:format` (atom, default: `:plaintext`) - The format of the input text. Used to determine where to split the text in some strategies.
+
+  Invalid options raise `TextChunker.Error`.
   """
   alias TextChunker.Chunk
+  alias TextChunker.Error
   alias TextChunker.Strategies.RecursiveChunk
-
-  @supported_strategies [RecursiveChunk]
 
   @supported_formats [
     :doc,
@@ -42,7 +43,7 @@ defmodule TextChunker do
   ]
 
   @opts_schema [
-    strategy: [required: true, type: {:in, @supported_strategies}],
+    strategy: [required: true, type: {:custom, __MODULE__, :validate_strategy, []}],
     chunk_overlap: [required: true, type: :non_neg_integer],
     chunk_size: [required: true, type: :pos_integer],
     get_chunk_size: [required: false, type: {:fun, 1}],
@@ -63,6 +64,8 @@ defmodule TextChunker do
   @doc """
   Splits the provided text into a list of `%Chunk{}` structs.
 
+  Raises `TextChunker.Error` if the options are invalid.
+
   ## Examples
 
   ```elixir
@@ -74,25 +77,50 @@ defmodule TextChunker do
   # => Generates many smaller chunks with significant overlap
   ```
   """
-  @spec split(binary(), keyword()) :: [Chunk.t()] | {:error, String.t()}
+  @spec split(binary(), keyword()) :: [Chunk.t()]
   def split(text, opts \\ []) do
     opts = Keyword.merge(@default_opts, opts)
 
-    with {:ok, args} <- NimbleOptions.validate(opts, @opts_schema),
-         :ok <- validate_overlap_not_greater_than_size(args) do
-      args[:strategy].split(text, args)
-    else
-      {:error, %NimbleOptions.ValidationError{message: message}} -> {:error, message}
-      {:error, message} -> {:error, message}
+    case NimbleOptions.validate(opts, @opts_schema) do
+      {:ok, args} ->
+        validate_overlap_not_greater_than_size!(args)
+        args[:strategy].split(text, args)
+
+      {:error, %NimbleOptions.ValidationError{message: message}} ->
+        raise Error, message: message
     end
   end
 
-  defp validate_overlap_not_greater_than_size(args) do
-    if args[:chunk_overlap] <= args[:chunk_size] do
-      :ok
+  @doc false
+  def validate_strategy(module) when is_atom(module) do
+    if Code.ensure_loaded?(module) and declares_chunker_behaviour?(module) do
+      {:ok, module}
     else
-      {:error,
-       "invalid value for :chunk_overlap option: must not be greater than :chunk_size (#{args[:chunk_size]}), got: #{args[:chunk_overlap]}"}
+      {:error, "must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: #{inspect(module)}"}
     end
+  end
+
+  def validate_strategy(other) do
+    {:error, "must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: #{inspect(other)}"}
+  end
+
+  defp declares_chunker_behaviour?(module) do
+    behaviours =
+      :attributes
+      |> module.module_info()
+      |> Keyword.get_values(:behaviour)
+      |> List.flatten()
+
+    TextChunker.ChunkerBehaviour in behaviours
+  end
+
+  defp validate_overlap_not_greater_than_size!(args) do
+    if args[:chunk_overlap] > args[:chunk_size] do
+      raise Error,
+        message:
+          "invalid value for :chunk_overlap option: must not be greater than :chunk_size (#{args[:chunk_size]}), got: #{args[:chunk_overlap]}"
+    end
+
+    :ok
   end
 end
