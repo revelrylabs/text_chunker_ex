@@ -16,8 +16,6 @@ end
 
 defmodule MultiBehaviourStrategy do
   @moduledoc false
-  # AnotherBehaviour is declared first so this test double catches a
-  # validator regression that only inspects the first :behaviour attribute.
   @behaviour AnotherBehaviour
   @behaviour TextChunker.ChunkerBehaviour
 
