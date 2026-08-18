@@ -16,7 +16,7 @@ defmodule TextChunker.MixProject do
       ],
 
       source_url: @source_url,
-      homepage_url: "https://github.com/revelrylabs",
+      homepage_url: @source_url,
 
       # Hex
       description: "An Elixir library for semantic text chunking.",
@@ -56,8 +56,10 @@ defmodule TextChunker.MixProject do
   defp docs() do
     [
       main: "readme",
+      source_ref: "v#{@version}",
       extras:
         [
+          "CHANGELOG.md",
           "CODE_OF_CONDUCT.md",
           "RELEASES.md",
           "CONTRIBUTING.md",
