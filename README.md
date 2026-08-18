@@ -91,8 +91,8 @@ defmodule MyApp.SentenceChunker do
   @behaviour TextChunker.ChunkerBehaviour
 
   @impl true
-  def split(text, opts) do
-    # return a list of %TextChunker.Chunk{} structs
+  def split(text, _opts) do
+    [%TextChunker.Chunk{text: text, start_byte: 0, end_byte: byte_size(text)}]
   end
 end
 
