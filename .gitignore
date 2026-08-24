@@ -13,3 +13,6 @@ erl_crash.dump
 # Dialyzer PLT files
 /priv/plts/*.plt
 /priv/plts/*.plt.hash
+
+# macOS
+.DS_Store
