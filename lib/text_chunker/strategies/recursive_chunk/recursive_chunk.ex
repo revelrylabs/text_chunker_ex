@@ -58,21 +58,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     chunk_overlap = opts[:chunk_overlap]
     get_chunk_size = opts[:get_chunk_size]
     initial_split = %Chunk{text: text, start_byte: 0, end_byte: byte_size(text)}
-    chunks = perform_split(initial_split, separators, chunk_size, chunk_overlap, get_chunk_size)
-
-    case chunks do
-      [] ->
-        [
-          %Chunk{
-            start_byte: 0,
-            end_byte: 0,
-            text: "No chunks created - check text content and chunk size settings"
-          }
-        ]
-
-      chunks ->
-        chunks
-    end
+    perform_split(initial_split, separators, chunk_size, chunk_overlap, get_chunk_size)
   end
 
   # **Recursive Splitting:**

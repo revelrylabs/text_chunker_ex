@@ -1,3 +1,41 @@
+defmodule UpcaseStrategy do
+  @moduledoc false
+  @behaviour TextChunker.ChunkerBehaviour
+
+  @impl true
+  def split(text, opts) do
+    send(self(), {:upcase_strategy_opts, opts})
+    [%TextChunker.Chunk{text: String.upcase(text), start_byte: 0, end_byte: byte_size(text)}]
+  end
+end
+
+defmodule AnotherBehaviour do
+  @moduledoc false
+  @callback foo() :: any()
+end
+
+defmodule MultiBehaviourStrategy do
+  @moduledoc false
+  @behaviour AnotherBehaviour
+  @behaviour TextChunker.ChunkerBehaviour
+
+  @impl AnotherBehaviour
+  def foo, do: :ok
+
+  @impl TextChunker.ChunkerBehaviour
+  def split(text, _opts) do
+    [%TextChunker.Chunk{text: text, start_byte: 0, end_byte: byte_size(text)}]
+  end
+end
+
+defmodule GenServerOnlyModule do
+  @moduledoc false
+  use GenServer
+
+  @impl GenServer
+  def init(arg), do: {:ok, arg}
+end
+
 defmodule TextChunkerTest do
   use ExUnit.Case
 
@@ -678,33 +716,21 @@ defmodule TextChunkerTest do
 
   describe "rejects unsupported options" do
     test "rejects a chunk_overlap of -1" do
-      opts = [
-        chunk_overlap: -1
-      ]
-
-      result = TextChunker.split("this should fail", opts)
-      assert result == {:error, "invalid value for :chunk_overlap option: expected non negative integer, got: -1"}
+      assert_raise TextChunker.Error,
+                   "invalid value for :chunk_overlap option: expected non negative integer, got: -1",
+                   fn -> TextChunker.split("this should fail", chunk_overlap: -1) end
     end
 
     test "rejects a chunk_size of 0" do
-      opts = [
-        chunk_size: 0
-      ]
-
-      result = TextChunker.split("this should fail", opts)
-      assert result == {:error, "invalid value for :chunk_size option: expected positive integer, got: 0"}
+      assert_raise TextChunker.Error,
+                   "invalid value for :chunk_size option: expected positive integer, got: 0",
+                   fn -> TextChunker.split("this should fail", chunk_size: 0) end
     end
 
     test "rejects a chunk_overlap greater than chunk_size" do
-      opts = [
-        chunk_size: 10,
-        chunk_overlap: 11
-      ]
-
-      result = TextChunker.split("this should fail", opts)
-
-      assert result ==
-               {:error, "invalid value for :chunk_overlap option: must not be greater than :chunk_size (10), got: 11"}
+      assert_raise TextChunker.Error,
+                   "invalid value for :chunk_overlap option: must not be greater than :chunk_size (10), got: 11",
+                   fn -> TextChunker.split("this should fail", chunk_size: 10, chunk_overlap: 11) end
     end
 
     test "accepts a chunk_overlap equal to chunk_size" do
@@ -718,28 +744,79 @@ defmodule TextChunkerTest do
     end
 
     test "rejects an unsupported format" do
-      opts = [
-        format: :made_up_format
-      ]
-
-      result = TextChunker.split("this should fail", opts)
-
-      assert result == {
-               :error,
-               "invalid value for :format option: expected one of [:doc, :docx, :elixir, :epub, :html, :javascript, :latex, :markdown, :odt, :pdf, :php, :plaintext, :python, :rtf, :ruby, :typescript, :vtt, :vue], got: :made_up_format"
-             }
+      assert_raise TextChunker.Error,
+                   "invalid value for :format option: expected one of [:doc, :docx, :elixir, :epub, :html, :javascript, :latex, :markdown, :odt, :pdf, :php, :plaintext, :python, :rtf, :ruby, :typescript, :vtt, :vue], got: :made_up_format",
+                   fn -> TextChunker.split("this should fail", format: :made_up_format) end
     end
 
-    test "rejects a strategy that is not currently supported" do
-      opts = [
-        strategy: UnsupportedModule
-      ]
+    test "rejects a strategy module that does not declare the behaviour" do
+      assert_raise TextChunker.Error,
+                   "invalid value for :strategy option: must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: UnsupportedModule",
+                   fn -> TextChunker.split("this should fail", strategy: UnsupportedModule) end
+    end
 
-      result = TextChunker.split("this should fail", opts)
+    test "rejects a module with a split/2 function but no behaviour declaration" do
+      assert_raise TextChunker.Error,
+                   "invalid value for :strategy option: must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: Enum",
+                   fn -> TextChunker.split("this should fail", strategy: Enum) end
+    end
 
-      assert result ==
-               {:error,
-                "invalid value for :strategy option: expected one of [TextChunker.Strategies.RecursiveChunk], got: UnsupportedModule"}
+    test "rejects a strategy that is not a module" do
+      assert_raise TextChunker.Error,
+                   ~s(invalid value for :strategy option: must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: "not a module"),
+                   fn -> TextChunker.split("this should fail", strategy: "not a module") end
+    end
+
+    test "rejects a module declaring a different behaviour" do
+      assert_raise TextChunker.Error,
+                   "invalid value for :strategy option: must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: GenServerOnlyModule",
+                   fn -> TextChunker.split("this should fail", strategy: GenServerOnlyModule) end
+    end
+
+    test "rejects a module that declares the behaviour but does not implement split/2" do
+      ExUnit.CaptureIO.capture_io(:stderr, fn ->
+        Module.create(
+          DeclaresButDoesNotImplement,
+          quote do
+            @behaviour TextChunker.ChunkerBehaviour
+          end,
+          Macro.Env.location(__ENV__)
+        )
+      end)
+
+      assert_raise TextChunker.Error,
+                   "invalid value for :strategy option: DeclaresButDoesNotImplement declares @behaviour TextChunker.ChunkerBehaviour but does not implement split/2",
+                   fn -> TextChunker.split("this should fail", strategy: DeclaresButDoesNotImplement) end
+    end
+  end
+
+  describe "custom strategies" do
+    test "accepts any module implementing ChunkerBehaviour and passes it the validated opts" do
+      chunks = TextChunker.split("hello world", strategy: UpcaseStrategy, chunk_size: 11, chunk_overlap: 0)
+
+      assert [%TextChunker.Chunk{text: "HELLO WORLD", start_byte: 0, end_byte: 11}] = chunks
+      assert_received {:upcase_strategy_opts, opts}
+      assert opts[:chunk_size] == 11
+      assert opts[:chunk_overlap] == 0
+      assert opts[:format] == :plaintext
+    end
+
+    test "accepts a strategy declaring multiple behaviours" do
+      chunks = TextChunker.split("hello", strategy: MultiBehaviourStrategy, chunk_size: 5, chunk_overlap: 0)
+
+      assert [%TextChunker.Chunk{text: "hello"}] = chunks
+    end
+  end
+
+  describe "supported_formats/0" do
+    test "every listed format is accepted by split/2" do
+      formats = TextChunker.supported_formats()
+
+      assert :plaintext in formats
+
+      for format <- formats do
+        assert is_list(TextChunker.split("hello", format: format))
+      end
     end
   end
 
@@ -886,14 +963,8 @@ defmodule TextChunkerTest do
   end
 
   describe "error handling" do
-    test "returns error chunk for empty text" do
-      chunks = TextChunker.split("", chunk_size: 100, chunk_overlap: 0, format: :plaintext)
-
-      assert length(chunks) == 1
-      chunk = List.first(chunks)
-      assert chunk.start_byte == 0
-      assert chunk.end_byte == 0
-      assert String.contains?(chunk.text, "No chunks created")
+    test "returns an empty list for empty text" do
+      assert TextChunker.split("", chunk_size: 100, chunk_overlap: 0, format: :plaintext) == []
     end
   end
 
