@@ -1,0 +1,4 @@
+# Check out all text files with LF line endings on every platform.
+# The golden tests compare fixture content byte-for-byte, so a CRLF
+# checkout (e.g. core.autocrlf=true on Windows) breaks the suite.
+* text=auto eol=lf
