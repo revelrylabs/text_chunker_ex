@@ -1,6 +1,6 @@
 defmodule UpcaseStrategy do
   @moduledoc false
-  @behaviour TextChunker.ChunkerBehaviour
+  @behaviour TextChunker.Strategy
 
   @impl true
   def split(text, opts) do
@@ -17,12 +17,12 @@ end
 defmodule MultiBehaviourStrategy do
   @moduledoc false
   @behaviour AnotherBehaviour
-  @behaviour TextChunker.ChunkerBehaviour
+  @behaviour TextChunker.Strategy
 
   @impl AnotherBehaviour
   def foo, do: :ok
 
-  @impl TextChunker.ChunkerBehaviour
+  @impl TextChunker.Strategy
   def split(text, _opts) do
     [%TextChunker.Chunk{text: text, start_byte: 0, end_byte: byte_size(text)}]
   end
@@ -751,25 +751,25 @@ defmodule TextChunkerTest do
 
     test "rejects a strategy module that does not declare the behaviour" do
       assert_raise TextChunker.Error,
-                   "invalid value for :strategy option: must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: UnsupportedModule",
+                   "invalid value for :strategy option: must be a module declaring @behaviour TextChunker.Strategy, got: UnsupportedModule",
                    fn -> TextChunker.split("this should fail", strategy: UnsupportedModule) end
     end
 
     test "rejects a module with a split/2 function but no behaviour declaration" do
       assert_raise TextChunker.Error,
-                   "invalid value for :strategy option: must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: Enum",
+                   "invalid value for :strategy option: must be a module declaring @behaviour TextChunker.Strategy, got: Enum",
                    fn -> TextChunker.split("this should fail", strategy: Enum) end
     end
 
     test "rejects a strategy that is not a module" do
       assert_raise TextChunker.Error,
-                   ~s(invalid value for :strategy option: must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: "not a module"),
+                   ~s(invalid value for :strategy option: must be a module declaring @behaviour TextChunker.Strategy, got: "not a module"),
                    fn -> TextChunker.split("this should fail", strategy: "not a module") end
     end
 
     test "rejects a module declaring a different behaviour" do
       assert_raise TextChunker.Error,
-                   "invalid value for :strategy option: must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: GenServerOnlyModule",
+                   "invalid value for :strategy option: must be a module declaring @behaviour TextChunker.Strategy, got: GenServerOnlyModule",
                    fn -> TextChunker.split("this should fail", strategy: GenServerOnlyModule) end
     end
 
@@ -778,20 +778,20 @@ defmodule TextChunkerTest do
         Module.create(
           DeclaresButDoesNotImplement,
           quote do
-            @behaviour TextChunker.ChunkerBehaviour
+            @behaviour TextChunker.Strategy
           end,
           Macro.Env.location(__ENV__)
         )
       end)
 
       assert_raise TextChunker.Error,
-                   "invalid value for :strategy option: DeclaresButDoesNotImplement declares @behaviour TextChunker.ChunkerBehaviour but does not implement split/2",
+                   "invalid value for :strategy option: DeclaresButDoesNotImplement declares @behaviour TextChunker.Strategy but does not implement split/2",
                    fn -> TextChunker.split("this should fail", strategy: DeclaresButDoesNotImplement) end
     end
   end
 
   describe "custom strategies" do
-    test "accepts any module implementing ChunkerBehaviour and passes it the validated opts" do
+    test "accepts any module implementing TextChunker.Strategy and passes it the validated opts" do
       chunks = TextChunker.split("hello world", strategy: UpcaseStrategy, chunk_size: 11, chunk_overlap: 0)
 
       assert [%TextChunker.Chunk{text: "HELLO WORLD", start_byte: 0, end_byte: 11}] = chunks

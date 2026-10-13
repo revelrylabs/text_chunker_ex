@@ -1,14 +1,5 @@
 defmodule TextChunker.Strategies.RecursiveChunk.Separators do
-  @moduledoc """
-  Handles separator configuration for the RecursiveChunk text chunking strategy.
-
-  Provides predefined lists of separators tailored for different text formats. The order of separators is crucial, as the splitting algorithm prioritizes them sequentially.
-
-  **Key Features:**
-
-  * **Format-Specific Separators:** Customizes splitting behavior based on formats like Markdown, plain text, Elixir, and others.
-  * **Prioritized Splitting:** Attempts to split text using the highest-priority separator applicable to the text's content.\
-  """
+  @moduledoc false
 
   @plaintext_formats [
     :doc,
@@ -21,10 +12,8 @@ defmodule TextChunker.Strategies.RecursiveChunk.Separators do
     :vtt
   ]
 
+  @doc false
   @spec get_separators(atom) :: [String.t()]
-  @doc """
-  Returns a list of separators that will be used to split the document of the given format
-  """
   def get_separators(:markdown) do
     [
       "\n## ",

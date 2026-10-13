@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-10-13
 
 First stable release. The public API is `TextChunker.split/2`, `TextChunker.supported_formats/0`,
-`%TextChunker.Chunk{}`, `TextChunker.Error`, and the `TextChunker.ChunkerBehaviour` callback.
+`%TextChunker.Chunk{}`, `TextChunker.Error`, and the `TextChunker.Strategy` callback.
 From here on it follows semantic versioning.
 
 ### Changed
@@ -20,6 +20,9 @@ From here on it follows semantic versioning.
   ([#102](https://github.com/revelrylabs/text_chunker_ex/pull/102))
 - **Breaking:** empty input returns `[]` instead of a single sentinel chunk
   ([#102](https://github.com/revelrylabs/text_chunker_ex/pull/102))
+- **Breaking:** `TextChunker.ChunkerBehaviour` is renamed to `TextChunker.Strategy`
+- `TextChunker.Strategies.RecursiveChunk.Separators` is hidden from the docs; it is an
+  implementation detail of the built-in strategy, not public API
 - Chunk assembly is linear in the number of chunks: chunk and split lists are accumulated as
   deep lists instead of appended with `++`
   ([#99](https://github.com/revelrylabs/text_chunker_ex/pull/99))
@@ -29,7 +32,7 @@ From here on it follows semantic versioning.
 
 ### Added
 
-- `:strategy` accepts any module declaring `@behaviour TextChunker.ChunkerBehaviour` and
+- `:strategy` accepts any module declaring `@behaviour TextChunker.Strategy` and
   implementing `split/2`, not only the built-in `RecursiveChunk`
   ([#102](https://github.com/revelrylabs/text_chunker_ex/pull/102))
 - `TextChunker.supported_formats/0` returns the accepted `:format` values

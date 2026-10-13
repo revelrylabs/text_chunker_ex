@@ -12,7 +12,7 @@ defmodule TextChunker do
   * `:chunk_size` (positive integer, default: 2000) - Maximum size in token length for each chunk.
   * `:get_chunk_size` (function, default: &String.length/1) - A function that returns the number of tokens in a chunk, by default the number of graphemes.
   * `:chunk_overlap` (non-negative integer, default: 200) - Number of overlapping tokens between consecutive chunks to preserve context. Must not be greater than `:chunk_size`.
-  * `:strategy` (module, default: `RecursiveChunk`) - A module declaring `@behaviour TextChunker.ChunkerBehaviour`.
+  * `:strategy` (module, default: `RecursiveChunk`) - A module declaring `@behaviour TextChunker.Strategy`.
   * `:format` (atom, default: `:plaintext`) - The format of the input text. Used to determine where to split the text in some strategies.
 
   Invalid options raise `TextChunker.Error`.
@@ -101,10 +101,10 @@ defmodule TextChunker do
   def validate_strategy(module) when is_atom(module) do
     cond do
       not (Code.ensure_loaded?(module) and declares_chunker_behaviour?(module)) ->
-        {:error, "must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: #{inspect(module)}"}
+        {:error, "must be a module declaring @behaviour TextChunker.Strategy, got: #{inspect(module)}"}
 
       not function_exported?(module, :split, 2) ->
-        {:error, "#{inspect(module)} declares @behaviour TextChunker.ChunkerBehaviour but does not implement split/2"}
+        {:error, "#{inspect(module)} declares @behaviour TextChunker.Strategy but does not implement split/2"}
 
       true ->
         {:ok, module}
@@ -112,7 +112,7 @@ defmodule TextChunker do
   end
 
   def validate_strategy(other) do
-    {:error, "must be a module declaring @behaviour TextChunker.ChunkerBehaviour, got: #{inspect(other)}"}
+    {:error, "must be a module declaring @behaviour TextChunker.Strategy, got: #{inspect(other)}"}
   end
 
   defp declares_chunker_behaviour?(module) do
@@ -122,7 +122,7 @@ defmodule TextChunker do
       |> Keyword.get_values(:behaviour)
       |> List.flatten()
 
-    TextChunker.ChunkerBehaviour in behaviours
+    TextChunker.Strategy in behaviours
   end
 
   defp validate_overlap_not_greater_than_size!(args) do

@@ -30,7 +30,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   4. **Metadata Generation:**  Tracks byte ranges for each chunk for potential reassembly of the original text.
   """
 
-  @behaviour TextChunker.ChunkerBehaviour
+  @behaviour TextChunker.Strategy
 
   alias TextChunker.Chunk
   alias TextChunker.Strategies.RecursiveChunk.Separators

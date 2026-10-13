@@ -1,4 +1,4 @@
-defmodule TextChunker.ChunkerBehaviour do
+defmodule TextChunker.Strategy do
   @moduledoc """
   Defines the contract that must be implemented for all text splitting strategies.
   """
