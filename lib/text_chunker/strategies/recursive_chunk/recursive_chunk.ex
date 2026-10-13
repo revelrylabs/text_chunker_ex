@@ -10,13 +10,12 @@ defmodule TextChunker.Strategies.RecursiveChunk do
 
   Both are represented by `%TextChunker.Chunk{}` structs internally; the names refer to their role in the algorithm.
 
-  Throughout the implementation, chunk and split lists are accumulated as deep lists: `[acc, item]`
-  appends in constant time while preserving order, and `List.flatten/1` restores a flat list wherever
-  one is consumed. Leaves are only `%TextChunker.Chunk{}` structs and `{chunk, size}` tuples, never
-  lists, so flattening is always safe. Three private functions require flat input and are the only
-  places (besides the return from `split/2`) where flattening happens: `merge_splits_into_chunks/4`,
-  `build_chunk/1`, and `trim_splits_for_overlap/5`. This keeps chunk assembly linear in the number
-  of chunks.
+  Chunk and split lists are accumulated as deep lists so that chunk assembly stays linear in the
+  number of chunks: `[acc, item]` appends in constant time and preserves order, and `List.flatten/1`
+  restores a flat list wherever one is consumed. Flattening is safe because the leaves are only
+  `%TextChunker.Chunk{}` structs and `{chunk, size}` tuples, never lists. Apart from the return from
+  `split/2`, the only functions that need flat input are `merge_splits_into_chunks/4`, `build_chunk/1`,
+  and `trim_splits_for_overlap/5`.
 
   **Key Features:**
 
@@ -161,6 +160,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
       Enum.reduce(splits, {[], [], 0}, fn split, {final_chunks, current_splits, current_size} ->
         split_size = get_chunk_size.(split.text)
 
+        # The `!= []` check is safe on the deep list because every append adds a tuple.
         if current_size + split_size > chunk_size and current_splits != [] do
           flat_splits = List.flatten(current_splits)
           chunk = build_chunk(flat_splits)
