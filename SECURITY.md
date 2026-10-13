@@ -2,9 +2,6 @@
 
 ## Supported Versions
 
-Security fixes are released for the latest minor version of the current major release.
-Older versions are not patched; please upgrade.
-
 | Version | Supported          |
 | ------- | ------------------ |
 | 1.0.x   | :white_check_mark: |
