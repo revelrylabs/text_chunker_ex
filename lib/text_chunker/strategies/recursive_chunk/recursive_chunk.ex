@@ -11,8 +11,12 @@ defmodule TextChunker.Strategies.RecursiveChunk do
   Both are represented by `%TextChunker.Chunk{}` structs internally; the names refer to their role in the algorithm.
 
   Throughout the implementation, chunk and split lists are accumulated as deep lists: `[acc, item]`
-  appends in constant time while preserving order, and a single `List.flatten/1` at the point of use
-  restores a flat list. This keeps chunk assembly linear in the number of chunks.
+  appends in constant time while preserving order, and `List.flatten/1` restores a flat list wherever
+  one is consumed. Leaves are only `%TextChunker.Chunk{}` structs and `{chunk, size}` tuples, never
+  lists, so flattening is always safe. Three private functions require flat input and are the only
+  places (besides the return from `split/2`) where flattening happens: `merge_splits_into_chunks/4`,
+  `build_chunk/1`, and `trim_splits_for_overlap/5`. This keeps chunk assembly linear in the number
+  of chunks.
 
   **Key Features:**
 
@@ -158,8 +162,8 @@ defmodule TextChunker.Strategies.RecursiveChunk do
         split_size = get_chunk_size.(split.text)
 
         if current_size + split_size > chunk_size and current_splits != [] do
-          sized_splits = List.flatten(current_splits)
-          chunk = build_chunk(sized_splits)
+          flat_splits = List.flatten(current_splits)
+          chunk = build_chunk(flat_splits)
 
           if get_chunk_size.(chunk.text) > chunk_size do
             fallback_chunks =
@@ -171,7 +175,7 @@ defmodule TextChunker.Strategies.RecursiveChunk do
             {[final_chunks, fallback_chunks], [{split, split_size}], split_size}
           else
             {overlap_splits, overlap_size} =
-              trim_splits_for_overlap(sized_splits, current_size, chunk_overlap, chunk_size, split_size)
+              trim_splits_for_overlap(flat_splits, current_size, chunk_overlap, chunk_size, split_size)
 
             {[final_chunks, chunk], [overlap_splits, {split, split_size}], overlap_size + split_size}
           end
