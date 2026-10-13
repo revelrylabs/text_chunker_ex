@@ -5,9 +5,6 @@ defmodule TextChunker.Strategies.RecursiveChunk.Separators do
   # splitting algorithm tries separators sequentially, so the first entry is
   # the highest-priority boundary (e.g. a markdown heading) and the list falls
   # through to paragraph, line, and finally word breaks.
-  #
-  # Hidden from the docs on purpose: these lists are an implementation detail
-  # of the built-in strategy and may be tuned in minor releases.
   @moduledoc false
 
   @plaintext_formats [
