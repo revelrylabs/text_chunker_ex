@@ -10,12 +10,8 @@ defmodule TextChunker.Strategies.RecursiveChunk do
 
   Both are represented by `%TextChunker.Chunk{}` structs internally; the names refer to their role in the algorithm.
 
-  Chunk and split lists are accumulated as deep lists so that chunk assembly stays linear in the
-  number of chunks: `[acc, item]` appends in constant time and preserves order, and `List.flatten/1`
-  restores a flat list wherever one is consumed. Flattening is safe because the leaves are only
-  `%TextChunker.Chunk{}` structs and `{chunk, size}` tuples, never lists. Apart from the return from
-  `split/2`, the only functions that need flat input are `merge_splits_into_chunks/4`, `build_chunk/1`,
-  and `trim_splits_for_overlap/5`.
+   In the interest of speed, chunk and split lists are accumulated as deep (nested) lists. `List.flatten/1` restores a flat list wherever one is consumed: apart from the return from
+  `split/2`, the only functions that need flat input are `merge_splits_into_chunks/4`, `build_chunk/1`, and `trim_splits_for_overlap/5`.
 
   **Key Features:**
 
