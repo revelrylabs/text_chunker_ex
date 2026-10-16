@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-16
+
+First stable release. The public API is `TextChunker.split/2`, `TextChunker.supported_formats/0`,
+`%TextChunker.Chunk{}`, `TextChunker.Error`, and the `TextChunker.Strategy` callback.
+
+### Changed
+
+- **Breaking:** `TextChunker.split/2` raises `TextChunker.Error` on invalid options instead of
+  returning `{:error, String.t()}`; the return type is now always `[TextChunker.Chunk.t()]`.
+  This only affects you if you pattern-match on `{:error, message}` from `TextChunker.split/2`
+  ([#102](https://github.com/revelrylabs/text_chunker_ex/pull/102))
+- **Breaking:** empty input returns `[]` instead of a single sentinel chunk. This only affects
+  you if you were doing anything special with the `"No chunks created"` chunk text; if you
+  weren't, this stops that made-up chunk from polluting your data
+  ([#102](https://github.com/revelrylabs/text_chunker_ex/pull/102))
+- **Breaking:** `TextChunker.ChunkerBehaviour` is renamed to `TextChunker.Strategy`. This
+  shouldn't really affect anyone, since you couldn't plug in your own strategies before anyway
+- `TextChunker.Strategies.RecursiveChunk.Separators` is hidden from the docs; it is an
+  implementation detail of the built-in strategy, not public API
+- Chunk assembly is linear in the number of chunks: chunk and split lists are accumulated as
+  deep lists instead of appended with `++`
+  ([#99](https://github.com/revelrylabs/text_chunker_ex/pull/99))
+- Credo runs in CI ([#104](https://github.com/revelrylabs/text_chunker_ex/pull/104)); text files
+  check out with LF line endings on every platform
+  ([#105](https://github.com/revelrylabs/text_chunker_ex/pull/105))
+
+### Added
+
+- `:strategy` accepts any module declaring `@behaviour TextChunker.Strategy` and
+  implementing `split/2`, not only the built-in `RecursiveChunk`
+  ([#102](https://github.com/revelrylabs/text_chunker_ex/pull/102))
+- `TextChunker.supported_formats/0` returns the accepted `:format` values
+  ([#102](https://github.com/revelrylabs/text_chunker_ex/pull/102))
+
 ## [0.7.0] - 2026-07-31
 
 ### Changed
@@ -123,7 +157,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   configurable chunk size, overlap, and format, and byte-range metadata on
   every chunk
 
-[Unreleased]: https://github.com/revelrylabs/text_chunker_ex/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/revelrylabs/text_chunker_ex/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/revelrylabs/text_chunker_ex/compare/v0.7.0...v1.0.0
 [0.7.0]: https://github.com/revelrylabs/text_chunker_ex/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/revelrylabs/text_chunker_ex/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/revelrylabs/text_chunker_ex/compare/0.5.2...v0.6.0

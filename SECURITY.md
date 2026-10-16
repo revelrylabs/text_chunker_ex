@@ -4,19 +4,8 @@
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.7.0   | :white_check_mark: |
-| 0.6.1   | :white_check_mark: |
-| 0.6.0   | :white_check_mark: |
-| 0.5.2   | :white_check_mark: |
-| 0.5.1   | :white_check_mark: |
-| 0.5.0   | :white_check_mark: |
-| 0.4.0   | :white_check_mark: |
-| 0.3.2   | :white_check_mark: |
-| 0.3.1   | :white_check_mark: |
-| 0.3.0   | :white_check_mark: |
-| 0.2.0   | :white_check_mark: |
-| 0.1.2   | :white_check_mark: |
-| 0.1.1   | :white_check_mark: |
+| 1.0.x   | :white_check_mark: |
+| < 1.0   | :x:                |
 
 ## Reporting a Vulnerability
 

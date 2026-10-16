@@ -2,7 +2,7 @@ defmodule TextChunker.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/revelrylabs/text_chunker_ex"
-  @version "0.7.0"
+  @version "1.0.0"
 
   def project do
     [
@@ -51,6 +51,7 @@ defmodule TextChunker.MixProject do
     [
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
+      files: ~w(lib mix.exs README.md LICENSE NOTICE CHANGELOG.md .formatter.exs)
     ]
   end
 
