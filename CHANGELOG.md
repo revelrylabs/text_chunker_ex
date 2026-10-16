@@ -7,11 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-10-13
+## [1.0.0] - 2026-10-16
 
 First stable release. The public API is `TextChunker.split/2`, `TextChunker.supported_formats/0`,
 `%TextChunker.Chunk{}`, `TextChunker.Error`, and the `TextChunker.Strategy` callback.
-From here on it follows semantic versioning.
 
 ### Changed
 
