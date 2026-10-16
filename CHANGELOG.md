@@ -15,11 +15,15 @@ First stable release. The public API is `TextChunker.split/2`, `TextChunker.supp
 ### Changed
 
 - **Breaking:** `TextChunker.split/2` raises `TextChunker.Error` on invalid options instead of
-  returning `{:error, String.t()}`; the return type is now always `[TextChunker.Chunk.t()]`
+  returning `{:error, String.t()}`; the return type is now always `[TextChunker.Chunk.t()]`.
+  This only affects you if you pattern-match on `{:error, message}` from `TextChunker.split/2`
   ([#102](https://github.com/revelrylabs/text_chunker_ex/pull/102))
-- **Breaking:** empty input returns `[]` instead of a single sentinel chunk
+- **Breaking:** empty input returns `[]` instead of a single sentinel chunk. This only affects
+  you if you were doing anything special with the `"No chunks created"` chunk text; if you
+  weren't, this stops that made-up chunk from polluting your data
   ([#102](https://github.com/revelrylabs/text_chunker_ex/pull/102))
-- **Breaking:** `TextChunker.ChunkerBehaviour` is renamed to `TextChunker.Strategy`
+- **Breaking:** `TextChunker.ChunkerBehaviour` is renamed to `TextChunker.Strategy`. This
+  shouldn't really affect anyone, since you couldn't plug in your own strategies before anyway
 - `TextChunker.Strategies.RecursiveChunk.Separators` is hidden from the docs; it is an
   implementation detail of the built-in strategy, not public API
 - Chunk assembly is linear in the number of chunks: chunk and split lists are accumulated as
