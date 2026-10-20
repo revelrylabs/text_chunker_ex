@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `usage-rules.md` - rules for AI coding agents via [usage_rules](https://hex.pm/packages/usage_rules)
+
+### Changed
+
+- Corrected the `TextChunker` moduledoc: `:chunk_size` and `:chunk_overlap` are measured in
+  graphemes by default
+
 ## [1.0.0] - 2026-10-16
 
 First stable release. The public API is `TextChunker.split/2`, `TextChunker.supported_formats/0`,

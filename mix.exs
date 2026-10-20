@@ -19,7 +19,7 @@ defmodule TextChunker.MixProject do
       homepage_url: @source_url,
 
       # Hex
-      description: "An Elixir library for semantic text chunking.",
+      description: "A library for splitting text into semantically coherent chunks.",
       package: package(),
 
       # Docs
@@ -51,7 +51,7 @@ defmodule TextChunker.MixProject do
     [
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
-      files: ~w(lib mix.exs README.md LICENSE NOTICE CHANGELOG.md .formatter.exs)
+      files: ~w(lib mix.exs README.md LICENSE NOTICE CHANGELOG.md usage-rules.md .formatter.exs)
     ]
   end
 
