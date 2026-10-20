@@ -9,6 +9,9 @@ defmodule TextChunker.RecursiveChunkPropertyTest do
   use ExUnit.Case, async: true
   use ExUnitProperties
 
+  alias TextChunker.Strategies.RecursiveChunk
+  alias TextChunker.Strategies.RecursiveChunk.Separators
+
   @formats [
     :doc,
     :docx,
@@ -224,5 +227,38 @@ defmodule TextChunker.RecursiveChunkPropertyTest do
     crlf_split? or
       (String.valid?(prefix) and String.valid?(suffix) and
          String.graphemes(prefix) ++ String.graphemes(suffix) == String.graphemes(text))
+  end
+
+  # The regex splitter that split_on_separator/2 replaced (#97), kept as a reference.
+  defp regex_split_on_separator(separator, text) do
+    regex = Regex.compile!("(?=#{Regex.escape(separator)})", [:unicode])
+    Regex.split(regex, text, trim: true)
+  end
+
+  property "split_on_separator/2 matches the regex lookahead splitter, including overlapping separators" do
+    separators =
+      @formats
+      |> Enum.flat_map(&Separators.get_separators/1)
+      |> Enum.uniq()
+
+    # Text is built around the chosen separator: repeating it, or following it
+    # with one of its own characters, produces overlapping occurrences such as
+    # "\n\n" + "\n" or "\n\n" + "\n\n".
+    check all(
+            separator <- member_of(separators),
+            text <-
+              [
+                constant(separator),
+                member_of(String.graphemes(separator)),
+                member_of(@tricky_fragments),
+                string(:printable, max_length: 3)
+              ]
+              |> one_of()
+              |> list_of(max_length: 30)
+              |> map(&Enum.join/1),
+            max_runs: 1_000
+          ) do
+      assert RecursiveChunk.split_on_separator(separator, text) == regex_split_on_separator(separator, text)
+    end
   end
 end

@@ -221,14 +221,34 @@ defmodule TextChunker.Strategies.RecursiveChunk do
     end
   end
 
-  defp split_on_separator(separator, %Chunk{text: text}) do
-    escaped_separator = Regex.escape(separator)
-    regex = Regex.compile!("(?=#{escaped_separator})", [:unicode])
-    Regex.split(regex, text, trim: true)
+  # Splits text immediately before every occurrence of separator, keeping the
+  # separator at the start of the following split.
+  @doc false
+  def split_on_separator(separator, text) do
+    [0 | separator_positions(text, separator, 0)]
+    |> Enum.dedup()
+    |> split_at_boundaries(text)
+    |> Enum.reject(&(&1 == ""))
+  end
+
+  # Byte offsets of every occurrence of separator, including overlapping ones
+  # ("\n\n" occurs at 0 and 1 in "\n\n\n"), so the search resumes one byte past
+  # each match rather than past its end.
+  defp separator_positions(text, separator, offset) do
+    case :binary.match(text, separator, scope: {offset, byte_size(text) - offset}) do
+      :nomatch -> []
+      {pos, _len} -> [pos | separator_positions(text, separator, pos + 1)]
+    end
+  end
+
+  defp split_at_boundaries([from], text), do: [binary_part(text, from, byte_size(text) - from)]
+
+  defp split_at_boundaries([from, next | rest], text) do
+    [binary_part(text, from, next - from) | split_at_boundaries([next | rest], text)]
   end
 
   defp get_splits_with_positions(%Chunk{} = parent_split, separator) do
-    split_texts = split_on_separator(separator, parent_split)
+    split_texts = split_on_separator(separator, parent_split.text)
 
     {splits, _final_offset} =
       Enum.map_reduce(split_texts, parent_split.start_byte, fn split_text, offset ->

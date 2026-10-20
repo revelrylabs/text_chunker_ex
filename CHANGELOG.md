@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Splitting on a separator scans bytes with `:binary.match/3` instead of compiling a regex on
+  every call, about 1.3x faster on large inputs
+  ([#97](https://github.com/revelrylabs/text_chunker_ex/issues/97))
+
 ## [1.0.0] - 2026-10-16
 
 First stable release. The public API is `TextChunker.split/2`, `TextChunker.supported_formats/0`,
