@@ -11,9 +11,8 @@ TextChunker splits text into semantically coherent chunks, commonly for embeddin
 
 ## Sizing
 
-- `chunk_size` and `chunk_overlap` are measured in **graphemes** by default.
-  If your embedding model has a token limit, pass the tokenizer's token counter as
-  `get_chunk_size` (a 1-arity function returning an integer).
+- `chunk_size` and `chunk_overlap` are measured in **graphemes** by default, or by
+  `get_chunk_size` (a 1-arity function returning an integer) if given.
 - `get_chunk_size` is called many times per split, so take care with passing expensive functions.
 - `chunk_size` is a hard maximum; chunks are often smaller.
 - `chunk_overlap` is also a maximum and is not guaranteed: it is skipped where it
