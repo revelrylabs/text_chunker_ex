@@ -9,9 +9,9 @@ defmodule TextChunker do
   * **Metadata Tracking:**  Generates `Chunk` structs containing byte range information.
 
   **Supported Options**
-  * `:chunk_size` (positive integer, default: 2000) - Maximum size in token length for each chunk.
-  * `:get_chunk_size` (function, default: &String.length/1) - A function that returns the number of tokens in a chunk, by default the number of graphemes.
-  * `:chunk_overlap` (non-negative integer, default: 200) - Number of overlapping tokens between consecutive chunks to preserve context. Must not be greater than `:chunk_size`.
+  * `:chunk_size` (positive integer, default: 2000) - Maximum size of each chunk, measured by `:get_chunk_size` (graphemes by default).
+  * `:get_chunk_size` (function, default: &String.length/1) - A function used to measure chunk size, defaulting to graphemes.
+  * `:chunk_overlap` (non-negative integer, default: 200) - Maximum overlap between consecutive chunks, measured the same way as `:chunk_size`. Overlap is not guaranteed. Must not be greater than `:chunk_size`.
   * `:strategy` (module, default: `RecursiveChunk`) - A module declaring `@behaviour TextChunker.Strategy`.
   * `:format` (atom, default: `:plaintext`) - The format of the input text. Used to determine where to split the text in some strategies.
 
