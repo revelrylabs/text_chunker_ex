@@ -7,14 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-22
+
 ### Added
 
 - `usage-rules.md` - rules for AI coding agents via [usage_rules](https://hex.pm/packages/usage_rules)
+  ([#109](https://github.com/revelrylabs/text_chunker_ex/pull/109))
 
 ### Changed
 
 - Corrected the `TextChunker` moduledoc: `:chunk_size` and `:chunk_overlap` are measured in
-  graphemes by default
+  graphemes by default ([#109](https://github.com/revelrylabs/text_chunker_ex/pull/109))
 
 ## [1.0.0] - 2026-10-16
 
@@ -166,7 +169,8 @@ First stable release. The public API is `TextChunker.split/2`, `TextChunker.supp
   configurable chunk size, overlap, and format, and byte-range metadata on
   every chunk
 
-[Unreleased]: https://github.com/revelrylabs/text_chunker_ex/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/revelrylabs/text_chunker_ex/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/revelrylabs/text_chunker_ex/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/revelrylabs/text_chunker_ex/compare/v0.7.0...v1.0.0
 [0.7.0]: https://github.com/revelrylabs/text_chunker_ex/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/revelrylabs/text_chunker_ex/compare/v0.6.0...v0.6.1
